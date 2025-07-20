@@ -58,9 +58,9 @@ const reservationMiddleware = {
       });
     }
 
-    if (diffMinutes < 30) {
+    if (diffMinutes < 60) {
       return res.status(400).json({
-        message: "Check-in time must be at least 30 minutes from now",
+        message: "Check-in time must be at least 1 hours from now",
         success: false,
       });
     }

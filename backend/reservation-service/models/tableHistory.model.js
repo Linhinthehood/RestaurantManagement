@@ -28,13 +28,22 @@ const tableHistorySchema = new mongoose.Schema({
   },
   tableStatus: {
     type: String,
-    enum: ["Available", "Occupied", "Pending", "Unavailable"],
+    enum: ["Available", "Pending", "Occupied", "Unavailable"],
     default: "Available",
   },
   note: {
     type: String,
     default: "",
   },
+});
+
+tableHistorySchema.pre("save", function (next) {
+  if (this.checkInTime && !this.expectedCheckOutTime) {
+    this.expectedCheckOutTime = new Date(
+      this.checkInTime.getTime() + 2 * 60 * 60 * 1000
+    );
+  }
+  next();
 });
 
 const tableHistoryModel = mongoose.model("TableHistory", tableHistorySchema);

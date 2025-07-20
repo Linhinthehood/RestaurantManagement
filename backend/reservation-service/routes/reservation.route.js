@@ -18,7 +18,6 @@ route.put(
   validateAssignTable,
   reservationController.assignTable
 );
-route.get("/availables", reservationController.getAvailableTables);
 route.put("/:id/checkin", reservationController.checkInReservation);
 route.get("/today", reservationController.getAllReservations);
 route.get("/customer/:phone", reservationController.getReservationByPhone);

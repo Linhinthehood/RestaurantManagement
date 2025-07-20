@@ -18,7 +18,8 @@ const reservationService = {
     let customerId = null;
     if (!isWalkIn) {
       let customer = await customerModel.findOne({
-        $or: [{ phone: customerPhone }, { email: customerEmail }],
+        phone: customerPhone,
+        email: customerEmail,
       });
       if (!customer) {
         customer = await customerModel.create({
@@ -39,11 +40,20 @@ const reservationService = {
         checkInTime: { $gte: fromTime, $lte: toTime },
         status: { $ne: "Cancelled" },
       });
-
-      if (existingReservation) {
+      if (existingReservation.length >= 1) {
         throw new Error("Customer already have reservation at this time!");
       }
     }
+
+    const availableTables = await reservationService.getAvailableTables(
+      checkInTime,
+      quantity
+    );
+
+    if (availableTables.length === 0) {
+      throw new Error("No available tables at this time");
+    }
+
     data.deposit = quantity >= 6 ? 100000 : 0;
 
     const reservation = await reservationModel.create({
@@ -83,15 +93,17 @@ const reservationService = {
     if (!quantity || isNaN(quantity)) {
       throw new Error("Invalid quantity provided");
     }
-    const time = new Date(checkInTime);
-    const allHistories = await tableHistoryModel.find({
-      assignedTime: {
-        $gte: new Date(time.getTime() - 2 * 60 * 60 * 1000),
-        $lte: new Date(time.getTime() + 2 * 60 * 60 * 1000),
-      },
+    const checkIn = new Date(checkInTime);
+    const expectedCheckOutTime = new Date(
+      checkIn.getTime() + 2 * 60 * 60 * 1000
+    );
+    const conflictingHistories = await tableHistoryModel.find({
+      checkInTime: { $lte: expectedCheckOutTime },
+      expectedCheckOutTime: { $gte: checkIn },
+      tableStatus: { $in: ["Pending", "Occupied", "Unavailable"] },
     });
     const reservedTables = new Set(
-      allHistories.map((h) => h.tableId.toString())
+      conflictingHistories.map((h) => h.tableId.toString())
     );
     const availableTables = mockTables.filter(
       (table) =>
@@ -104,13 +116,16 @@ const reservationService = {
   assignTable: async (reservationId, tableId, staffId) => {
     const reservation = await reservationModel.findById(reservationId);
     if (!reservation) throw new Error("Reservation not found");
-    const checkInTime = reservation.checkInTime;
-    const startTime = new Date(checkInTime.getTime() - 2 * 60 * 60 * 1000);
-    const endTime = new Date(checkInTime.getTime() + 2 * 60 * 60 * 1000);
+    const checkInTime = new Date(reservation.checkInTime);
+    const expectedCheckOutTime = new Date(
+      checkInTime.getTime() + 2 * 60 * 60 * 1000
+    );
 
     const isAlreadyAssigned = await tableHistoryModel.exists({
       tableId: tableId,
-      assignedTime: { $gte: startTime, $lte: endTime },
+      checkInTime: { $lte: expectedCheckOutTime },
+      expectedCheckOutTime: { $gte: checkInTime },
+      tableStatus: { $in: ["Pending", "Occupied", "Unavailable"] },
     });
 
     if (isAlreadyAssigned) {
@@ -120,7 +135,8 @@ const reservationService = {
     const historyData = {
       reservationId: reservation._id,
       tableId,
-      checkInTime: reservation.checkInTime,
+      checkInTime,
+      expectedCheckOutTime,
       assignedTime: new Date(),
       tableStatus: "Pending",
     };
@@ -148,20 +164,33 @@ const reservationService = {
       },
       { new: true }
     );
-    return reservation;
-  },
-
-  checkInReservation: async (id) => {
-    const reservation = await reservationModel.findById(id);
     if (!reservation) {
       throw new Error("Reservation not found");
     }
-    reservation.status = "Arrived";
-    reservation.statusHistory.push({
-      status: "Arrived",
-      changeAt: new Date(),
-    });
+
+    await tableHistoryModel.updateMany(
+      { reservationId: reservation._id },
+      { tableStatus: "Available" }
+    );
+    return reservation;
+  },
+
+  checkInReservation: async (reservationId) => {
+    const reservation = await reservationModel.findById(reservationId);
+    if (!reservation) {
+      throw new Error("Reservation not found");
+    }
+    (reservation.status = "Arrived"),
+      reservation.statusHistory.push({
+        status: "Arrived",
+        changeAt: new Date(),
+      });
     await reservation.save();
+
+    await tableHistoryModel.updateMany(
+      { reservationId: reservation._id },
+      { tableStatus: "Occupied" }
+    );
     return reservation;
   },
 };
