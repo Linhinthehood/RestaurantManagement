@@ -32,7 +32,7 @@ exports.createOrder = async (req, res) => {
       ...rest,
       orderItemId,
       totalPrice,
-      orderStatusHistory: [{ status: 'serving', changedAt: new Date() }]
+      orderStatusHistory: [{ status: 'Serving', changedAt: new Date() }]
     });
     await order.save();
     res.status(201).json(enrichOrder(order, items));
@@ -68,21 +68,41 @@ exports.getOrderById = async (req, res) => {
   }
 };
 
-// Cập nhật Order
+// Cập nhật Order (không cập nhật status)
 exports.updateOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
-    // Nếu có thay đổi orderStatus thì push vào history
-    if (req.body.orderStatus && req.body.orderStatus !== order.orderStatus) {
+    // Không cho phép cập nhật orderStatus và orderStatusHistory ở đây
+    Object.keys(req.body).forEach(key => {
+      if (key !== 'orderStatus' && key !== 'orderStatusHistory' && key !== 'totalPrice') order[key] = req.body[key];
+    });
+    // Nếu có cập nhật orderItemId thì tính lại totalPrice
+    if (req.body.orderItemId) {
+      const items = await OrderItem.find({ _id: { $in: req.body.orderItemId } });
+      const totalPrice = items.reduce((sum, item) => sum + Number(item.price), 0);
+      order.totalPrice = totalPrice;
+    }
+    await order.save();
+    res.json(order);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Cập nhật status của Order
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (!req.body.orderStatus) {
+      return res.status(400).json({ error: 'orderStatus là bắt buộc' });
+    }
+    if (req.body.orderStatus !== order.orderStatus) {
       order.orderStatus = req.body.orderStatus;
       order.orderStatusHistory.push({ status: req.body.orderStatus, changedAt: new Date() });
+      await order.save();
     }
-    // Cập nhật các trường khác nếu có
-    Object.keys(req.body).forEach(key => {
-      if (key !== 'orderStatus' && key !== 'orderStatusHistory') order[key] = req.body[key];
-    });
-    await order.save();
     res.json(order);
   } catch (err) {
     res.status(400).json({ error: err.message });

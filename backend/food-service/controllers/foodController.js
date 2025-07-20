@@ -37,7 +37,7 @@ exports.createFood = async (req, res) => {
 // Lấy tất cả food
 exports.getAllFoods = async (req, res) => {
   try {
-    const foods = await Food.find();
+    const foods = await Food.find().populate('categoryId', 'name priority');
     res.json(foods);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -47,7 +47,7 @@ exports.getAllFoods = async (req, res) => {
 // Lấy food theo id
 exports.getFoodById = async (req, res) => {
   try {
-    const food = await Food.findById(req.params.id);
+    const food = await Food.findById(req.params.id).populate('categoryId', 'name priority');
     if (!food) return res.status(404).json({ error: 'Food not found' });
     res.json(food);
   } catch (err) {
@@ -58,7 +58,7 @@ exports.getFoodById = async (req, res) => {
 // Lấy danh sách món ăn theo categoryId
 exports.getFoodsByCategory = async (req, res) => {
   try {
-    const foods = await Food.find({ categoryId: req.params.categoryId });
+    const foods = await Food.find({ categoryId: req.params.categoryId }).populate('categoryId', 'name priority');
     res.json(foods);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -68,7 +68,7 @@ exports.getFoodsByCategory = async (req, res) => {
 // Cập nhật food
 exports.updateFood = async (req, res) => {
   try {
-    const food = await Food.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const food = await Food.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('categoryId', 'name priority');
     if (!food) return res.status(404).json({ error: 'Food not found' });
     res.json(food);
   } catch (err) {

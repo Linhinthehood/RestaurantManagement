@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const { errorHandler, notFound } = require('./middlewares/errorHandler');
 require('dotenv').config();
 
 const app = express();
@@ -23,6 +24,10 @@ app.use('/api/foods', foodRoutes);
 app.get('/', (req, res) => {
   res.json({ message: 'Food Service is running!' });
 });
+
+// Error handling middleware (phải đặt sau tất cả routes)
+app.use(notFound);
+app.use(errorHandler);
 
 // Lắng nghe server
 app.listen(PORT, () => {

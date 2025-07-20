@@ -5,11 +5,11 @@ const axios = require('axios');
 // Helper: kiểm tra flow chuyển trạng thái
 const canChangeStatus = (current, next) => {
   const flow = {
-    pending: ['preparing', 'cancelled'],
-    preparing: ['ready_to_serve', 'cancelled'],
-    ready_to_serve: ['served'],
-    served: [],
-    cancelled: []
+    Pending: ['Preparing', 'Cancelled'],
+    Preparing: ['Ready_to_serve', 'Cancelled'],
+    Ready_to_serve: ['Served'],
+    Served: [],
+    Cancelled: []
   };
   return flow[current] && flow[current].includes(next);
 };
@@ -20,7 +20,7 @@ exports.createOrderItem = async (req, res) => {
     const { foodId, quantity, note, orderId } = req.body;
     if (!orderId) return res.status(400).json({ error: 'orderId is required' });
     // Gọi API food-service để lấy thông tin food
-    const foodServiceUrl = process.env.FOOD_SERVICE_URL || 'http://localhost:3003';
+    const foodServiceUrl = process.env.FOOD_SERVICE_URL;
     const foodRes = await axios.get(`${foodServiceUrl}/api/foods/${foodId}`);
     const food = foodRes.data;
     if (!food) return res.status(400).json({ error: 'Food not found' });
@@ -31,8 +31,8 @@ exports.createOrderItem = async (req, res) => {
       quantity,
       note,
       price,
-      status: 'pending',
-      statusHistory: [{ status: 'pending', changedAt: new Date() }]
+      status: 'Pending',
+      statusHistory: [{ status: 'Pending', changedAt: new Date() }]
     });
     await orderItem.save();
     // Cập nhật lại order: thêm orderItemId và cập nhật totalPrice
@@ -78,24 +78,40 @@ exports.getOrderItemById = async (req, res) => {
   }
 };
 
-// Cập nhật OrderItem (chỉ cho phép update status đúng flow)
-exports.updateOrderItem = async (req, res) => {
+// Cập nhật trạng thái OrderItem (chỉ cho phép update status đúng flow)
+exports.updateOrderItemStatus = async (req, res) => {
   try {
-    const { status, ...rest } = req.body;
+    const { status } = req.body;
     const orderItem = await OrderItem.findById(req.params.id);
     if (!orderItem) return res.status(404).json({ error: 'OrderItem not found' });
-    if (status && status !== orderItem.status) {
-      // Kiểm tra flow
-      if (!canChangeStatus(orderItem.status, status)) {
-        return res.status(400).json({ error: 'Không thể chuyển trạng thái này!' });
-      }
-      orderItem.status = status;
-      orderItem.statusHistory.push({ status, changedAt: new Date() });
+    if (!status || status === orderItem.status) {
+      return res.status(400).json({ error: 'Trạng thái không hợp lệ hoặc không thay đổi' });
     }
-    // Update các trường khác nếu có
-    Object.keys(rest).forEach(key => {
-      if (key !== 'price' && key !== 'statusHistory') orderItem[key] = rest[key];
-    });
+    // Kiểm tra flow
+    if (!canChangeStatus(orderItem.status, status)) {
+      return res.status(400).json({ error: 'Không thể chuyển trạng thái này!' });
+    }
+    orderItem.status = status;
+    orderItem.statusHistory.push({ status, changedAt: new Date() });
+    await orderItem.save();
+    res.json(orderItem);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Cập nhật OrderItem (chỉ cho phép update các trường khác ngoài status)
+exports.updateOrderItem = async (req, res) => {
+  try {
+    const { note, quantity } = req.body;
+    const orderItem = await OrderItem.findById(req.params.id);
+    if (!orderItem) return res.status(404).json({ error: 'OrderItem not found' });
+    // Không cho phép cập nhật status và statusHistory qua PUT
+    if ('status' in req.body || 'statusHistory' in req.body) {
+      return res.status(400).json({ error: 'Không được cập nhật status qua PUT, hãy dùng PATCH /:id/status' });
+    }
+    if (note !== undefined) orderItem.note = note;
+    if (quantity !== undefined) orderItem.quantity = quantity;
     await orderItem.save();
     res.json(orderItem);
   } catch (err) {
