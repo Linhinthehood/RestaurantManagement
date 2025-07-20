@@ -184,6 +184,12 @@ const reservationController = {
       });
     } catch (error) {
       console.error("Error deleting reservation: ", error);
+      if (error.message === "Reservation not found") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
       res.status(500).json({
         message: "Internal server error",
         success: false,
