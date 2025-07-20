@@ -3,14 +3,14 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv'
 
 const registerUser = async (req, res) => {
-  const { name, password,role } = req.body;
+  const { name, password,role , phoneNumber, email, gender, } = req.body;
   try {
-    if (!name || !password || !role) {
+    if (!name || !password || !email ||!phoneNumber) {
       return res.status(400).json({
-        message: "Vui Lòng Nhập Đầy Đủ Thông Tin : name, password , vị trí .",
+        message: "Vui Lòng Nhập Đầy Đủ Thông Tin...!",
       });
     }
-    const userExists = await User.findOne({$and:[{name}, {role}]});
+    const userExists = await User.findOne({$and:[{name}, {email},{phoneNumber}]});
     if(userExists){
 return res.status(400).json({
   message:' Tài Khoản Đã Tồn Tại',
@@ -20,6 +20,9 @@ return res.status(400).json({
       name,
       password,
       role,
+      phoneNumber,
+      email,
+      gender,
   
     });
     if (newUser) {
@@ -45,14 +48,14 @@ return res.status(400).json({
 };
 
 const loginUser = async (req, res) => {
- const { name , password , role} = req.body
+ const { name , password ,} = req.body
  try{
-if(!name || !password  ||!role ){
+if(!name || !password  ){
   return res.status(400).json({
     message:"Vui Lòng Nhập Đầy Đủ Thông Tin..!"
   });
 }
-const existUser = await User.findOne({ name, role }).select('+password');
+const existUser = await User.findOne({ name}).select('+password');
 if ( existUser && ( await existUser.comparePassword(password))){
   const accesToken =  jwt.sign({
     id:existUser.id,
