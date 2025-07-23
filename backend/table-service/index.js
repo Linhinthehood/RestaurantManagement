@@ -18,12 +18,12 @@ connectDB();
 
 // Route mẫu
 app.get("/", (req, res) => {
-  res.json({ message: "Reservation Service is running!" });
+  res.json({ message: "Table Service is running!" });
 });
 
 app.use("/api/v1", RootRoute);
 
 // Lắng nghe server
 app.listen(PORT, () => {
-  console.log(`Reservation Service đang chạy tại http://localhost:${PORT}`);
+  console.log(`Table Service đang chạy tại http://localhost:${PORT}`);
 });

@@ -7,9 +7,9 @@ const OrderItemSchema = new Schema({
   quantity: { type: Number, required: true },
   note: { type: String },
   price: { type: mongoose.Types.Decimal128, required: true },
-  status: { type: String, enum: ['pending', 'preparing', 'ready_to_serve', 'served', 'cancelled'], default: 'pending' },
+  status: { type: String, enum: ['Pending', 'Preparing', 'Ready_to_serve', 'Served', 'Cancelled'], default: 'Pending' },
   statusHistory: [{
-    status: { type: String, enum: ['pending', 'preparing', 'ready_to_serve', 'served', 'cancelled'] },
+    status: { type: String, enum: ['Pending', 'Preparing', 'Ready_to_serve', 'Served', 'Cancelled'] },
     changedAt: { type: Date, default: Date.now }
   }],
   createdAt: { type: Date, default: Date.now }

@@ -5,11 +5,11 @@ const axios = require('axios');
 // Helper: kiểm tra flow chuyển trạng thái
 const canChangeStatus = (current, next) => {
   const flow = {
-    pending: ['preparing', 'cancelled'],
-    preparing: ['ready_to_serve', 'cancelled'],
-    ready_to_serve: ['served'],
-    served: [],
-    cancelled: []
+    Pending: ['Preparing', 'Cancelled'],
+    Preparing: ['Ready_to_serve', 'Cancelled'],
+    Ready_to_serve: ['Served'],
+    Served: [],
+    Cancelled: []
   };
   return flow[current] && flow[current].includes(next);
 };
@@ -20,37 +20,49 @@ exports.createOrderItem = async (req, res) => {
     const { foodId, quantity, note, orderId } = req.body;
     if (!orderId) return res.status(400).json({ error: 'orderId is required' });
     // Gọi API food-service để lấy thông tin food
-    const foodServiceUrl = process.env.FOOD_SERVICE_URL || 'http://localhost:3003';
+    const foodServiceUrl = process.env.FOOD_SERVICE_URL;
     const foodRes = await axios.get(`${foodServiceUrl}/api/foods/${foodId}`);
     const food = foodRes.data;
-    if (!food) return res.status(400).json({ error: 'Food not found' });
-    const price = Number(food.pricePerUnit.$numberDecimal || food.pricePerUnit || 0) * Number(quantity);
+
+    if (!food) {
+      return res.status(404).json({ error: 'Food not found' });
+    }
+
+    // 3. Không thể đặt quá quantity
+    if (food.quantity < quantity) {
+      return res.status(400).json({ 
+        error: `Số lượng đặt vượt quá số lượng tồn kho.`,
+        remainingQuantity: food.quantity 
+      });
+    }
+
+    const price = Number(food.pricePerUnit?.$numberDecimal || food.pricePerUnit || 0) * Number(quantity);
     const orderItem = new OrderItem({
       foodId,
       orderId,
       quantity,
       note,
       price,
-      status: 'pending',
-      statusHistory: [{ status: 'pending', changedAt: new Date() }]
+      status: 'Pending',
+      statusHistory: [{ status: 'Pending', changedAt: new Date() }]
     });
     await orderItem.save();
-    // Cập nhật lại order: thêm orderItemId và cập nhật totalPrice
+
+    // Cập nhật lại order: chỉ thêm orderItemId mới, không tính lại totalPrice
     const order = await Order.findById(orderId);
-    if (!order) return res.status(400).json({ error: 'Order not found' });
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
     order.orderItemId.push(orderItem._id);
-    // Lấy lại toàn bộ order item để tính tổng tiền
-    const allOrderItems = await OrderItem.find({ _id: { $in: order.orderItemId } });
-    order.totalPrice = allOrderItems.reduce((sum, item) => sum + Number(item.price), 0);
     await order.save();
-    // Gọi API food-service để cập nhật quantity và status của food
-    const newQuantity = Number(food.quantity) - Number(quantity);
-    const updatePayload = { quantity: newQuantity };
-    if (newQuantity < 10) updatePayload.status = 'Unavailable';
-    await axios.put(`${foodServiceUrl}/api/foods/${foodId}`, updatePayload);
+
+    // Cập nhật quantity của food
+    const newQuantity = food.quantity - quantity;
+    await axios.put(`${foodServiceUrl}/api/foods/${foodId}`, { quantity: newQuantity });
+    
     res.status(201).json({
       ...orderItem.toObject(),
-      food // trả về toàn bộ thông tin food
+      food
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -78,24 +90,67 @@ exports.getOrderItemById = async (req, res) => {
   }
 };
 
-// Cập nhật OrderItem (chỉ cho phép update status đúng flow)
+// Cập nhật trạng thái OrderItem (chỉ cho phép update status đúng flow)
+exports.updateOrderItemStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const orderItem = await OrderItem.findById(req.params.id).populate('orderId'); // Populate để lấy thông tin order
+    if (!orderItem) return res.status(404).json({ error: 'OrderItem not found' });
+    if (!status || status === orderItem.status) {
+      return res.status(400).json({ error: 'Trạng thái không hợp lệ hoặc không thay đổi' });
+    }
+    if (!canChangeStatus(orderItem.status, status)) {
+      return res.status(400).json({ error: 'Không thể chuyển trạng thái này!' });
+    }
+
+    const oldStatus = orderItem.status;
+    orderItem.status = status;
+    orderItem.statusHistory.push({ status, changedAt: new Date() });
+    await orderItem.save();
+
+    // Lấy order cha để cập nhật
+    const order = orderItem.orderId;
+    if (order) {
+        const allItems = await OrderItem.find({ _id: { $in: order.orderItemId } });
+        const servedItems = allItems.filter(item => item.status === 'Served');
+        order.totalPrice = servedItems.reduce((sum, item) => sum + Number(item.price), 0);
+        await order.save();
+    }
+    
+    // 2. Cập nhật lại quantity cho food item khi order item được trả về "Cancelled"
+    if (status === 'Cancelled' && oldStatus !== 'Cancelled') {
+      try {
+        const foodServiceUrl = process.env.FOOD_SERVICE_URL ;
+        const foodRes = await axios.get(`${foodServiceUrl}/api/foods/${orderItem.foodId}`);
+        const food = foodRes.data;
+        if (food) {
+          const newQuantity = food.quantity + orderItem.quantity;
+          await axios.put(`${foodServiceUrl}/api/foods/${orderItem.foodId}`, { quantity: newQuantity });
+        }
+      } catch (error) {
+        console.error('Lỗi khi cập nhật lại số lượng món ăn:', error.message);
+        // Có thể thêm logic để xử lý lỗi này, ví dụ: lưu vào một hàng đợi để thử lại
+      }
+    }
+
+    res.json(orderItem);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Cập nhật OrderItem (chỉ cho phép update các trường khác ngoài status)
 exports.updateOrderItem = async (req, res) => {
   try {
-    const { status, ...rest } = req.body;
+    const { note, quantity } = req.body;
     const orderItem = await OrderItem.findById(req.params.id);
     if (!orderItem) return res.status(404).json({ error: 'OrderItem not found' });
-    if (status && status !== orderItem.status) {
-      // Kiểm tra flow
-      if (!canChangeStatus(orderItem.status, status)) {
-        return res.status(400).json({ error: 'Không thể chuyển trạng thái này!' });
-      }
-      orderItem.status = status;
-      orderItem.statusHistory.push({ status, changedAt: new Date() });
+    // Không cho phép cập nhật status và statusHistory qua PUT
+    if ('status' in req.body || 'statusHistory' in req.body) {
+      return res.status(400).json({ error: 'Không được cập nhật status qua PUT, hãy dùng PATCH /:id/status' });
     }
-    // Update các trường khác nếu có
-    Object.keys(rest).forEach(key => {
-      if (key !== 'price' && key !== 'statusHistory') orderItem[key] = rest[key];
-    });
+    if (note !== undefined) orderItem.note = note;
+    if (quantity !== undefined) orderItem.quantity = quantity;
     await orderItem.save();
     res.json(orderItem);
   } catch (err) {
