@@ -1,22 +1,22 @@
 version: '3.8'
 services:
-  user-service:
-    build: ./backend/user-service
-    ports:
-      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
-    environment:
-      - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${USER_DB}
-    depends_on:
-      - mongo
+  # user-service:
+  #   build: ./backend/user-service
+  #   ports:
+  #     - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
+  #   environment:
+  #     - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${USER_DB}
+  #   # depends_on:
+  #   #   - mongo
 
-  reservation-service:
-    build: ./backend/reservation-service
-    ports:
-      - "${RESERVATION_SERVICE_PORT}:${RESERVATION_SERVICE_PORT}"
-    environment:
-      - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${RESERVATION_DB}
-    depends_on:
-      - mongo
+  # reservation-service:
+  #   build: ./backend/reservation-service
+  #   ports:
+  #     - "${RESERVATION_SERVICE_PORT}:${RESERVATION_SERVICE_PORT}"
+  #   environment:
+  #     - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${RESERVATION_DB}
+  #   # depends_on:
+  #   #   - mongo
 
   food-service:
     build: ./backend/food-service
@@ -24,8 +24,8 @@ services:
       - "${FOOD_SERVICE_PORT}:${FOOD_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${FOOD_DB}
-    depends_on:
-      - mongo
+    # depends_on:
+    #   - mongo
 
   order-service:
     build: ./backend/order-service
@@ -33,17 +33,17 @@ services:
       - "${ORDER_SERVICE_PORT}:${ORDER_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${ORDER_DB}
-    depends_on:
-      - mongo
+    # depends_on:
+    #   - mongo
 
-  table-service:
-    build: ./backend/table-service
-    ports:
-      - "${TABLE_SERVICE_PORT}:${TABLE_SERVICE_PORT}"
-    environment:
-      - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${TABLE_DB}
-    depends_on:
-      - mongo
+  # table-service:
+  #   build: ./backend/table-service
+  #   ports:
+  #     - "${TABLE_SERVICE_PORT}:${TABLE_SERVICE_PORT}"
+  #   environment:
+  #     - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${TABLE_DB}
+  #   # depends_on:
+  #   #   - mongo
 
   payment-service:
     build: ./backend/payment-service
@@ -51,34 +51,29 @@ services:
       - "${PAYMENT_SERVICE_PORT}:${PAYMENT_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${PAYMENT_DB}
-    depends_on:
-      - mongo
+    # depends_on:
+    #   - mongo
 
   api-gateway:
     build: ./backend/api-gateway
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+    environment:
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
+      - FOOD_SERVICE_URL=http://food-service:${FOOD_SERVICE_PORT}
+      - ORDER_SERVICE_URL=http://order-service:${ORDER_SERVICE_PORT}
+      - PAYMENT_SERVICE_URL=http://payment-service:${PAYMENT_SERVICE_PORT}
     depends_on:
-      - user-service
-      - reservation-service
+      # - user-service
+      # - reservation-service
       - food-service
       - order-service
-      - table-service
+      # - table-service
       - payment-service
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
-    depends_on:
-      - api-gateway
-
-  mongo:
-    image: mongo:6
-    ports:
-      - "${MONGO_PORT}:${MONGO_PORT}"
-    volumes:
-      - mongo-data:/data/db
-
-volumes:
-  mongo-data: 
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+  #   depends_on:
+  #     - api-gateway 

@@ -20,9 +20,9 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/foods', foodRoutes);
 
 // Route mẫu
-app.get('/', (req, res) => {
-  res.json({ message: 'Food Service is running!' });
-});
+// app.get('/', (req, res) => {
+//   res.json({ message: 'Food Service is running!' });
+// });
 
 // Lắng nghe server
 app.listen(PORT, () => {
