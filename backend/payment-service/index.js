@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 require('dotenv').config();
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3006;
@@ -17,6 +18,8 @@ connectDB();
 app.get('/', (req, res) => {
   res.json({ message: 'Payment Service is running!' });
 });
+
+app.use('/api/payments', paymentRoutes);
 
 // Lắng nghe server
 app.listen(PORT, () => {

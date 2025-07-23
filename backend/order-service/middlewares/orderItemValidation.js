@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const OrderItem = require('../models/OrderItem');
+const Order = require('../models/Order');
 
 // Validate ObjectId
 const validateObjectId = (field) => (req, res, next) => {
@@ -8,6 +9,26 @@ const validateObjectId = (field) => (req, res, next) => {
     return res.status(400).json({ error: `${field} không hợp lệ` });
   }
   next();
+};
+
+// 1. Không thể thêm order item vào các order đã có trạng thái khác ngoài Serving
+const validateOrderIsServing = async (req, res, next) => {
+  const { orderId } = req.body;
+  if (!orderId) {
+    return next();
+  }
+  try {
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ error: 'Order không tồn tại' });
+    }
+    if (order.orderStatus !== 'Serving') {
+      return res.status(400).json({ error: 'Không thể thêm món vào order không ở trạng thái "Serving"' });
+    }
+    next();
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi kiểm tra trạng thái order' });
+  }
 };
 
 // Kiểm tra quantity
@@ -44,6 +65,7 @@ const forbidStatusRollback = async (req, res, next) => {
 const validateCreateOrderItem = [
   validateObjectId('foodId'),
   validateObjectId('orderId'),
+  validateOrderIsServing,
   validateQuantity,
   validateStatus
 ];
@@ -63,5 +85,6 @@ module.exports = {
   forbidStatusRollback,
   validateCreateOrderItem,
   validateUpdateOrderItem,
-  validateDeleteOrderItem
+  validateDeleteOrderItem,
+  validateOrderIsServing
 }; 

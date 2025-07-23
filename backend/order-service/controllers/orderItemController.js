@@ -23,8 +23,20 @@ exports.createOrderItem = async (req, res) => {
     const foodServiceUrl = process.env.FOOD_SERVICE_URL;
     const foodRes = await axios.get(`${foodServiceUrl}/api/foods/${foodId}`);
     const food = foodRes.data;
-    if (!food) return res.status(400).json({ error: 'Food not found' });
-    const price = Number(food.pricePerUnit.$numberDecimal || food.pricePerUnit || 0) * Number(quantity);
+
+    if (!food) {
+      return res.status(404).json({ error: 'Food not found' });
+    }
+
+    // 3. Không thể đặt quá quantity
+    if (food.quantity < quantity) {
+      return res.status(400).json({ 
+        error: `Số lượng đặt vượt quá số lượng tồn kho.`,
+        remainingQuantity: food.quantity 
+      });
+    }
+
+    const price = Number(food.pricePerUnit?.$numberDecimal || food.pricePerUnit || 0) * Number(quantity);
     const orderItem = new OrderItem({
       foodId,
       orderId,
@@ -35,22 +47,22 @@ exports.createOrderItem = async (req, res) => {
       statusHistory: [{ status: 'Pending', changedAt: new Date() }]
     });
     await orderItem.save();
-    // Cập nhật lại order: thêm orderItemId và cập nhật totalPrice
+
+    // Cập nhật lại order: chỉ thêm orderItemId mới, không tính lại totalPrice
     const order = await Order.findById(orderId);
-    if (!order) return res.status(400).json({ error: 'Order not found' });
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
     order.orderItemId.push(orderItem._id);
-    // Lấy lại toàn bộ order item để tính tổng tiền
-    const allOrderItems = await OrderItem.find({ _id: { $in: order.orderItemId } });
-    order.totalPrice = allOrderItems.reduce((sum, item) => sum + Number(item.price), 0);
     await order.save();
-    // Gọi API food-service để cập nhật quantity và status của food
-    const newQuantity = Number(food.quantity) - Number(quantity);
-    const updatePayload = { quantity: newQuantity };
-    if (newQuantity < 10) updatePayload.status = 'Unavailable';
-    await axios.put(`${foodServiceUrl}/api/foods/${foodId}`, updatePayload);
+
+    // Cập nhật quantity của food
+    const newQuantity = food.quantity - quantity;
+    await axios.put(`${foodServiceUrl}/api/foods/${foodId}`, { quantity: newQuantity });
+    
     res.status(201).json({
       ...orderItem.toObject(),
-      food // trả về toàn bộ thông tin food
+      food
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -82,18 +94,45 @@ exports.getOrderItemById = async (req, res) => {
 exports.updateOrderItemStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const orderItem = await OrderItem.findById(req.params.id);
+    const orderItem = await OrderItem.findById(req.params.id).populate('orderId'); // Populate để lấy thông tin order
     if (!orderItem) return res.status(404).json({ error: 'OrderItem not found' });
     if (!status || status === orderItem.status) {
       return res.status(400).json({ error: 'Trạng thái không hợp lệ hoặc không thay đổi' });
     }
-    // Kiểm tra flow
     if (!canChangeStatus(orderItem.status, status)) {
       return res.status(400).json({ error: 'Không thể chuyển trạng thái này!' });
     }
+
+    const oldStatus = orderItem.status;
     orderItem.status = status;
     orderItem.statusHistory.push({ status, changedAt: new Date() });
     await orderItem.save();
+
+    // Lấy order cha để cập nhật
+    const order = orderItem.orderId;
+    if (order) {
+        const allItems = await OrderItem.find({ _id: { $in: order.orderItemId } });
+        const servedItems = allItems.filter(item => item.status === 'Served');
+        order.totalPrice = servedItems.reduce((sum, item) => sum + Number(item.price), 0);
+        await order.save();
+    }
+    
+    // 2. Cập nhật lại quantity cho food item khi order item được trả về "Cancelled"
+    if (status === 'Cancelled' && oldStatus !== 'Cancelled') {
+      try {
+        const foodServiceUrl = process.env.FOOD_SERVICE_URL ;
+        const foodRes = await axios.get(`${foodServiceUrl}/api/foods/${orderItem.foodId}`);
+        const food = foodRes.data;
+        if (food) {
+          const newQuantity = food.quantity + orderItem.quantity;
+          await axios.put(`${foodServiceUrl}/api/foods/${orderItem.foodId}`, { quantity: newQuantity });
+        }
+      } catch (error) {
+        console.error('Lỗi khi cập nhật lại số lượng món ăn:', error.message);
+        // Có thể thêm logic để xử lý lỗi này, ví dụ: lưu vào một hàng đợi để thử lại
+      }
+    }
+
     res.json(orderItem);
   } catch (err) {
     res.status(400).json({ error: err.message });

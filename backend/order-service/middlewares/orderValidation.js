@@ -109,19 +109,6 @@ const checkAllOrderItemsServedOrCancelled = async (req, res, next) => {
   next();
 };
 
-// 2. Kiểm tra totalPrice chỉ tính các orderItem trạng thái Served
-const validateTotalPriceWithServedItems = async (req, res, next) => {
-  const order = await Order.findById(req.params.id);
-  if (!order) return res.status(404).json({ error: 'Order not found' });
-  const items = await OrderItem.find({ _id: { $in: order.orderItemId } });
-  const servedItems = items.filter(item => item.status === 'Served');
-  const total = servedItems.reduce((sum, item) => sum + Number(item.price), 0);
-  if (Number(order.totalPrice) !== total) {
-    return res.status(400).json({ error: 'totalPrice không khớp với tổng giá các món đã Served' });
-  }
-  next();
-};
-
 // Validate tổng hợp khi tạo order
 const validateCreateOrder = [
   validateObjectId('reservationId'),
@@ -161,6 +148,5 @@ module.exports = {
   validateUpdateOrder,
   validateUpdateOrderStatus,
   validateDeleteOrder,
-  checkAllOrderItemsServedOrCancelled,
-  validateTotalPriceWithServedItems
+  checkAllOrderItemsServedOrCancelled
 }; 
