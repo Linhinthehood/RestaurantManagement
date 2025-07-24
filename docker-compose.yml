@@ -9,14 +9,14 @@ services:
   #   # depends_on:
   #   #   - mongo
 
-  # reservation-service:
-  #   build: ./backend/reservation-service
-  #   ports:
-  #     - "${RESERVATION_SERVICE_PORT}:${RESERVATION_SERVICE_PORT}"
-  #   environment:
-  #     - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${RESERVATION_DB}
-  #   # depends_on:
-  #   #   - mongo
+  reservation-service:
+    build: ./backend/reservation-service
+    ports:
+      - "${RESERVATION_SERVICE_PORT}:${RESERVATION_SERVICE_PORT}"
+    environment:
+      - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${RESERVATION_DB}
+    # depends_on:
+    #   - mongo
 
   food-service:
     build: ./backend/food-service
@@ -57,19 +57,15 @@ services:
   api-gateway:
     build: ./backend/api-gateway
     ports:
-      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
-    environment:
-      - API_GATEWAY_PORT=${API_GATEWAY_PORT}
-      - FOOD_SERVICE_URL=http://food-service:${FOOD_SERVICE_PORT}
-      - ORDER_SERVICE_URL=http://order-service:${ORDER_SERVICE_PORT}
-      - PAYMENT_SERVICE_URL=http://payment-service:${PAYMENT_SERVICE_PORT}
+      - "3000:3000"
     depends_on:
       # - user-service
-      # - reservation-service
+      - reservation-service
       - food-service
       - order-service
       # - table-service
       - payment-service
+    restart: unless-stopped
 
   # frontend:
   #   build: ./frontend

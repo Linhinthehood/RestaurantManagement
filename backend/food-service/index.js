@@ -21,9 +21,9 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/foods', foodRoutes);
 
 // Route mẫu
-// app.get('/', (req, res) => {
-//   res.json({ message: 'Food Service is running!' });
-// });
+app.get('/', (req, res) => {
+  res.json({ message: 'Food Service is running!' });
+});
 
 // Error handling middleware (phải đặt sau tất cả routes)
 app.use(notFound);
