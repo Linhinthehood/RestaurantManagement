@@ -2,16 +2,12 @@ import { Outlet } from "react-router-dom";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 
-const waiterLinks = [
-  { path: "/waiter/reservations", label: "Reservations" },
-  { path: "/waiter/check-in", label: "Check In" },
-  { path: "/waiter/order", label: "Order" },
-];
+const customerLinks = [{ path: "/customer/reserve", label: "Reserve Table" }];
 
-const WaiterLayout = () => {
+const CustomerLayout = () => {
   return (
     <div className="flex">
-      <Sidebar links={waiterLinks} />
+      <Sidebar links={customerLinks} />
       <div className="flex-1">
         <Header />
         <main className="p-4">
@@ -22,4 +18,4 @@ const WaiterLayout = () => {
   );
 };
 
-export default WaiterLayout;
+export default CustomerLayout;

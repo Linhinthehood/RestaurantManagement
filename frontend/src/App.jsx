@@ -1,13 +1,8 @@
-import { Suspense } from "react";
-import { Outlet } from "react-router-dom";
 import "./App.css";
+import AppRouter from "./routes/AppRouter";
 
 function App() {
-  return (
-    <Suspense fallback={<div className="p-4 text-blue-500">Đang tải...</div>}>
-      <Outlet />
-    </Suspense>
-  );
+  return <AppRouter />;
 }
 
 export default App;

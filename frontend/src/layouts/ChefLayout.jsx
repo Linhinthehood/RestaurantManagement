@@ -1,17 +1,19 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet } from "react-router-dom";
+import Header from "../components/Header";
+import Sidebar from "../components/Sidebar";
+
+const chefLinks = [{ path: "/chef/dashboard", label: "Dashboard" }];
 
 const ChefLayout = () => {
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-red-800 text-white p-4 space-y-2">
-        <h2 className="text-xl font-bold">Chef Panel</h2>
-        <nav className="flex flex-col space-y-2">
-          <Link to="/chef/orders">Đơn bếp</Link>
-        </nav>
-      </aside>
-      <main className="flex-1 p-6 bg-gray-50">
-        <Outlet />
-      </main>
+    <div className="flex">
+      <Sidebar links={chefLinks} />
+      <div className="flex-1">
+        <Header />
+        <main className="p-4">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 };
