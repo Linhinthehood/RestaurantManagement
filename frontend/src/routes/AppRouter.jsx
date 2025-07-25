@@ -8,8 +8,7 @@ import ManagerLayout from "../layouts/ManagerLayout";
 import CustomerLayout from "../layouts/CustomerLayout";
 
 // Waiter Pages
-import ReservationList from "../pages/waiter/ReservationList";
-import CheckIn from "../pages/waiter/CheckIn";
+import AssignTable from "../pages/waiter/AssignTable";
 import OrderPage from "../pages/waiter/OrderPage";
 
 // Chef Pages
@@ -32,8 +31,7 @@ const AppRouter = () => {
 
         {/* Waiter */}
         <Route path="waiter" element={<WaiterLayout />}>
-          <Route path="/waiter/reservations" element={<ReservationList />} />
-          <Route path="/waiter/check-in" element={<CheckIn />} />
+          <Route path="/waiter/assign-table" element={<AssignTable />} />
           <Route path="/waiter/order" element={<OrderPage />} />
         </Route>
 
