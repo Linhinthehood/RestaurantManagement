@@ -1,6 +1,6 @@
 import User from "../models/user.js";
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
 
 const registerUser = async (req, res) => {
   const { name, password,role , phoneNumber, email, gender, } = req.body;
@@ -62,7 +62,7 @@ if ( existUser && ( await existUser.comparePassword(password))){
     name:existUser.name,
     role:existUser.role,
   },
-process.env.JWT_SERECT_KEY,
+process.env.JWT_SECRET_KEY,
 
 {
   expiresIn: process.env.JWT_EXPIRE_TIME,
@@ -87,8 +87,63 @@ process.env.JWT_SERECT_KEY,
 
  } 
 };
+const getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const getMyProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+  }
+};
+const updateUser = async (req, res) => {
+  try {
+    const { name, phoneNumber, gender, role, status } = req.body;
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { name, phoneNumber, gender, role, status },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
+    }
+
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+  }
+};
+const deleteUser = async (req, res) => {
+  try {
+    const deletedUser = await User.findByIdAndDelete(req.params.id);
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
+    }
+    res.json({ message: 'Xóa người dùng thành công' });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi máy chủ', error: error.message });
+  }
+};
+
+
+
+
 const AuthController = {
   registerUser,
   loginUser,
+  getMyProfile,
+  updateUser,
+  deleteUser,
+  getUsers,
+  
 };
+
 export default AuthController;

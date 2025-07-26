@@ -12,7 +12,7 @@ app.get('/',(req,res)=>{
   res.send("Welcome to RM sever");
 });
 app.use('/api',AppRouter);
-app.use((err,res,req,next)=>{
+app.use((err,req,res,next)=>{
   console.error(err.stack);
   res.status(500).send('something went wrong');
 });
