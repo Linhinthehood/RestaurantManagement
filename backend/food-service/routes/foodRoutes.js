@@ -6,12 +6,19 @@ const {
   validateFoodData, 
   validateObjectId 
 } = require('../middlewares/foodValidation');
+const { 
+  protect, 
+  requireFoodManagement 
+} = require('../middlewares/authMiddleware');
 
-router.post('/', upload.single('image'), validateFoodData, foodController.createFood);
-router.get('/', foodController.getAllFoods);
+// Public routes - xem menu (không cần xác thực)
+router.get('/', protect, requireFoodManagement, foodController.getAllFoods);
 router.get('/category/:categoryId', validateObjectId, foodController.getFoodsByCategory);
 router.get('/:id', validateObjectId, foodController.getFoodById);
-router.put('/:id', validateObjectId, validateFoodData, foodController.updateFood);
-router.delete('/:id', validateObjectId, foodController.deleteFood);
+
+// Protected routes - quản lý food (Manager, Chef)
+router.post('/', protect, requireFoodManagement, upload.single('image'), validateFoodData, foodController.createFood);
+router.put('/:id', protect, requireFoodManagement, validateObjectId, validateFoodData, foodController.updateFood);
+router.delete('/:id', protect, requireFoodManagement, validateObjectId, foodController.deleteFood);
 
 module.exports = router; 
