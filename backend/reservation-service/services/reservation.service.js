@@ -3,6 +3,7 @@ import tableHistoryModel from "../models/tableHistory.model.js";
 import { mockTables } from "../data/mockTables.js";
 import customerModel from "../models/customer.model.js";
 import mongoose from "mongoose";
+import tableServiceApi from "../utils/axiosInstance.js";
 
 const reservationService = {
   createReservation: async (data) => {
@@ -40,7 +41,7 @@ const reservationService = {
         checkInTime: { $gte: fromTime, $lte: toTime },
         status: { $ne: "Cancelled" },
       });
-      if (existingReservation.length >= 1) {
+      if (existingReservation) {
         throw new Error("Customer already have reservation at this time!");
       }
     }
@@ -105,11 +106,22 @@ const reservationService = {
     const reservedTables = new Set(
       conflictingHistories.map((h) => h.tableId.toString())
     );
-    const availableTables = mockTables.filter(
+    const response = await tableServiceApi.get("/tables/");
+    const allTables = response.data.tables;
+    console.log("Available tables:", allTables);
+    if (!Array.isArray(allTables)) {
+      throw new Error("Invalid table data received from table service");
+    }
+    const availableTables = allTables.filter(
       (table) =>
         table.capacity >= Number(quantity) &&
         !reservedTables.has(table._id.toString())
     );
+    // const availableTables = mockTables.filter(
+    //   (table) =>
+    //     table.capacity >= Number(quantity) &&
+    //     !reservedTables.has(table._id.toString())
+    // );
     return availableTables;
   },
 
