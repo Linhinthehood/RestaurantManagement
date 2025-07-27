@@ -3,8 +3,7 @@ import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 
 const waiterLinks = [
-  { path: "/waiter/reservations", label: "Reservations" },
-  { path: "/waiter/check-in", label: "Check In" },
+  { path: "/waiter/assign-table", label: "Reservations" },
   { path: "/waiter/order", label: "Order" },
 ];
 
