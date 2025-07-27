@@ -4,7 +4,7 @@ const tableHistorySchema = new mongoose.Schema({
   reservationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Reservation",
-    required: true,
+    required: false, // Cho phép optional khi tạo thủ công
   },
   tableId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -21,7 +21,7 @@ const tableHistorySchema = new mongoose.Schema({
   },
   checkInTime: {
     type: Date,
-    required: true,
+    required: false, // Cho phép optional khi tạo thủ công
   },
   expectedCheckOutTime: {
     type: Date,

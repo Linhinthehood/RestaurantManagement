@@ -1,27 +1,45 @@
 import express from "express";
 import reservationController from "../controllers/reservation.controller.js";
 import reservationMiddleware from "../middlewares/reservation.middleware.js";
-import { validateAssignTable } from "../middlewares/validateAssignTable.middleware.js";
-import { fakeAuth } from "../middlewares/fakeAuth.middleware.js";
+import { protect } from "../middlewares/authMiddleware.js";
 
-const route = express.Router();
+const router = express.Router();
 
-route.post(
+// Public routes
+router.post(
   "/",
   reservationMiddleware.validateReservationInput,
   reservationMiddleware.validateReservationTime,
   reservationController.createReservation
 );
-route.put(
+
+router.get("/available", reservationController.getAvailableTables);
+
+router.get("/customer/:phone", 
+  reservationMiddleware.validatePhoneNumber,
+  reservationController.getReservationByPhone
+);
+
+// Protected routes - require authentication
+router.use(protect);
+
+router.get("/today", reservationController.getAllReservations);
+
+router.put(
   "/:id/assign-table",
-  fakeAuth,
-  validateAssignTable,
+  reservationMiddleware.validateReservationId,
+  reservationMiddleware.validateAssignTable,
   reservationController.assignTable
 );
-route.put("/:id/checkin", reservationController.checkInReservation);
-route.get("/today", reservationController.getAllReservations);
-route.get("/customer/:phone", reservationController.getReservationByPhone);
-route.get("/available", reservationController.getAvailableTables);
-route.put("/:id/cancel", reservationController.cancelReservation);
 
-export default route;
+router.put("/:id/checkin", 
+  reservationMiddleware.validateReservationId,
+  reservationController.checkInReservation
+);
+
+router.put("/:id/cancel", 
+  reservationMiddleware.validateReservationId,
+  reservationController.cancelReservation
+);
+
+export default router;

@@ -5,10 +5,10 @@ const reservationMiddleware = {
 
     if (!isWalkIn) {
       const requiredFields = ["customerName", "customerPhone", "customerEmail"];
-      for (let fields of requiredFields) {
-        if (!data[fields]) {
+      for (let field of requiredFields) {
+        if (!data[field]) {
           return res.status(400).json({
-            message: `${fields} is required for non walk-in reservation`,
+            message: `${field} is required for non walk-in reservation`,
             success: false,
           });
         }
@@ -35,6 +35,7 @@ const reservationMiddleware = {
         success: false,
       });
     }
+
     next();
   },
 
@@ -60,12 +61,12 @@ const reservationMiddleware = {
 
     if (diffMinutes < 60) {
       return res.status(400).json({
-        message: "Check-in time must be at least 1 hours from now",
+        message: "Check-in time must be at least 1 hour from now",
         success: false,
       });
     }
 
-    const openHour = 9; // 9 AM
+    const openHour = 6; // 6 AM
     const closeHour = 22; // 10 PM
     const reservationHour = reservationTime.getHours();
 
@@ -78,5 +79,60 @@ const reservationMiddleware = {
 
     next();
   },
+
+  validateAssignTable: (req, res, next) => {
+    const { tableId } = req.body;
+    if (!tableId) {
+      return res.status(400).json({
+        message: "Table ID is required",
+        success: false,
+      });
+    }
+    next();
+  },
+
+  validateTableId: (req, res, next) => {
+    const { tableId } = req.params;
+    if (!tableId) {
+      return res.status(400).json({
+        message: "Table ID is required",
+        success: false,
+      });
+    }
+    next();
+  },
+
+  validateReservationId: (req, res, next) => {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        message: "Reservation ID is required",
+        success: false,
+      });
+    }
+    next();
+  },
+
+  validatePhoneNumber: (req, res, next) => {
+    const { phone } = req.params;
+    if (!phone) {
+      return res.status(400).json({
+        message: "Phone number is required",
+        success: false,
+      });
+    }
+    
+    // Basic phone number validation (Vietnamese format)
+    const phoneRegex = /^(\+84|84|0)[0-9]{9}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({
+        message: "Invalid phone number format",
+        success: false,
+      });
+    }
+    
+    next();
+  }
 };
+
 export default reservationMiddleware;
