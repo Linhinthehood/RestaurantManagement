@@ -10,11 +10,12 @@ app.use(cors());
 app.use(express.json());
 
 // Proxy config
-app.use('/api/users', createProxyMiddleware({ target: 'http://user-service:3001', changeOrigin: true, pathRewrite: { '^/api/users': '/api/users' } }));
-app.use('/api/reservations', createProxyMiddleware({ target: 'http://reservation-service:3002', changeOrigin: true, pathRewrite: { '^/api/reservations': '/api/reservations' } }));
+app.use('/api/auth', createProxyMiddleware({ target: 'http://user-service:3001', changeOrigin: true, pathRewrite: { '^/api/auth': '/api/auth' } }));
+app.use('/api/v1/reservations', createProxyMiddleware({ target: 'http://reservation-service:3002', changeOrigin: true, pathRewrite: { '^/api/v1/reservations': '/api/v1/reservations' } }));
+app.use('/api/v1/customers', createProxyMiddleware({ target: 'http://reservation-service:3002', changeOrigin: true, pathRewrite: { '^/api/v1/customers': '/api/v1/customers' } }));
 app.use('/api/foods', createProxyMiddleware({ target: 'http://food-service:3003', changeOrigin: true, pathRewrite: { '^/api/foods': '/api/foods' } }));
 app.use('/api/orders', createProxyMiddleware({ target: 'http://order-service:3004', changeOrigin: true, pathRewrite: { '^/api/orders': '/api/orders' } }));
-app.use('/api/tables', createProxyMiddleware({ target: 'http://table-service:3005', changeOrigin: true, pathRewrite: { '^/api/tables': '/api/tables' } }));
+app.use('/api/v1/tables', createProxyMiddleware({ target: 'http://table-service:3005', changeOrigin: true, pathRewrite: { '^/api/v1/tables': '/api/v1/tables' } }));
 app.use('/api/payments', createProxyMiddleware({ target: 'http://payment-service:3006', changeOrigin: true, pathRewrite: { '^/api/payments': '/api/payments' } }));
 
 app.get('/', (req, res) => {

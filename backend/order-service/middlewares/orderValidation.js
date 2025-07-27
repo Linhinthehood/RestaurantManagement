@@ -9,7 +9,8 @@ const OrderItem = require('../models/OrderItem');
 // Validate ObjectId
 const validateObjectId = (field) => (req, res, next) => {
   const value = req.body[field] || req.params[field];
-  if (value && !mongoose.Types.ObjectId.isValid(value)) {
+  // Chỉ validate nếu có giá trị và không phải null/undefined
+  if (value && value !== null && value !== undefined && !mongoose.Types.ObjectId.isValid(value)) {
     return res.status(400).json({ error: `${field} không hợp lệ` });
   }
   next();
@@ -87,7 +88,8 @@ const forbidStatusRollback = async (req, res, next) => {
 // Validate không cho phép tạo order nếu bàn đang có order trạng thái Serving
 const forbidCreateOrderIfTableServing = async (req, res, next) => {
   const { tableId } = req.body;
-  if (!tableId) return next();
+  // Chỉ kiểm tra nếu có tableId
+  if (!tableId || tableId === null || tableId === undefined) return next();
   const servingOrder = await Order.findOne({ tableId, orderStatus: 'Serving' });
   if (servingOrder) {
     return res.status(400).json({ error: 'Bàn này đang có order chưa hoàn thành' });
@@ -113,7 +115,6 @@ const checkAllOrderItemsServedOrCancelled = async (req, res, next) => {
 const validateCreateOrder = [
   validateObjectId('reservationId'),
   validateObjectId('userId'),
-  validateObjectId('tableId'),
   validateOrderItemIds,
   validateOrderStatus,
   forbidCreateOrderIfTableServing

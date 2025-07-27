@@ -109,6 +109,29 @@ const reservationController = {
     }
   },
 
+  getReservationById: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const reservation = await reservationService.getReservationById(id);
+      if (!reservation) {
+        return res.status(404).json({
+          message: "Reservation not found",
+          success: false,
+        });
+      }
+      res.status(200).json({
+        message: "Reservation fetched successfully",
+        reservation: reservation,
+        success: true,
+      });
+    } catch (error) {
+      console.error("Error fetching reservation by ID: ", error);
+      res
+        .status(500)
+        .json({ message: "Internal server error", success: false });
+    }
+  },
+
   getReservationByPhone: async (req, res) => {
     try {
       const { phone } = req.params;

@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const OrderSchema = new Schema({
   reservationId: { type: Schema.Types.ObjectId, ref: 'Reservation', required: true },
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  tableId: { type: Schema.Types.ObjectId, ref: 'Table', required: true },
+  tableId: { type: Schema.Types.ObjectId, ref: 'Table' },
   orderStatus: { type: String, enum: ['Serving', 'Completed'], default: 'Serving', required: true },
   orderStatusHistory: [{
     status: { type: String, enum: ['Serving', 'Completed'] },

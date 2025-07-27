@@ -1,31 +1,93 @@
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
-const { mockTables, mockUsers, mockReservations } = require('../mockData');
+const ExternalService = require('../services/externalService');
 
-function enrichOrder(order, orderItems = []) {
-  // Lấy thông tin table
-  const table = mockTables.find(t => t._id === String(order.tableId));
-  // Lấy thông tin user
-  const user = mockUsers.find(u => u._id === String(order.userId));
-  // Lấy thông tin reservation
-  const reservation = mockReservations.find(r => r._id === String(order.reservationId));
-  return {
-    ...order.toObject(),
-    tableName: table ? table.tableName : null,
-    userName: user ? user.name : null,
-    customerId: reservation ? reservation.customerId : null,
-    orderItems: orderItems.map(item => item.toObject())
-  };
+async function enrichOrder(order, orderItems = []) {
+  try {
+    console.log('Enriching order:', order._id);
+    console.log('Order tableId:', order.tableId);
+    console.log('Order userId:', order.userId);
+    console.log('Order reservationId:', order.reservationId);
+    
+    // Lấy thông tin table
+    const table = order.tableId ? await ExternalService.getTableById(order.tableId) : null;
+    console.log('Table data:', table);
+    
+    // Lấy thông tin user
+    const user = order.userId ? await ExternalService.getUserById(order.userId) : null;
+    console.log('User data:', user);
+    
+    // Lấy thông tin reservation và customer
+    let reservation = null;
+    let customer = null;
+    if (order.reservationId) {
+      reservation = await ExternalService.getReservationById(order.reservationId);
+      console.log('Reservation data:', reservation);
+      if (reservation && reservation.customerId) {
+        // Lấy thông tin customer từ reservation service
+        customer = await ExternalService.getCustomerById(reservation.customerId);
+        console.log('Customer data:', customer);
+      }
+    }
+    
+    // Xử lý user data từ response structure
+    const userData = user && user.data && user.data.user ? user.data.user : user;
+    
+    return {
+      ...order.toObject(),
+      // Thông tin bàn
+      tableName: table ? table.name : null,
+      tableCapacity: table ? table.capacity : null,
+      tableType: table ? table.type : null,
+      
+      // Thông tin nhân viên
+      userName: userData ? userData.name : null,
+      userRole: userData ? userData.role : null,
+      userEmail: userData ? userData.email : null,
+      
+      // Thông tin khách hàng
+      customerName: customer ? customer.name : null,
+      customerPhone: customer ? customer.phone : null, // Sửa từ phoneNumber thành phone
+      customerEmail: customer ? customer.email : null,
+      customerId: reservation ? reservation.customerId : null,
+      
+      // Thông tin reservation
+      reservationStatus: reservation ? reservation.status : null,
+      reservationQuantity: reservation ? reservation.quantity : null,
+      
+      orderItems: orderItems.map(item => item.toObject())
+    };
+  } catch (error) {
+    console.error('Error enriching order:', error.message);
+    // Trả về order cơ bản nếu có lỗi
+    return {
+      ...order.toObject(),
+      tableName: null,
+      userName: null,
+      customerName: null,
+      orderItems: orderItems.map(item => item.toObject())
+    };
+  }
 }
 
 // Tạo mới Order
 exports.createOrder = async (req, res) => {
   try {
-    const { orderItemId = [], ...rest } = req.body;
+    const { orderItemId = [], tableId, ...rest } = req.body;
     const items = orderItemId.length > 0 ? await OrderItem.find({ _id: { $in: orderItemId } }) : [];
+    
+    // Nếu có reservationId, lấy tableId từ reservation
+    let finalTableId = tableId;
+    if (rest.reservationId && !tableId) {
+      const reservation = await ExternalService.getReservationById(rest.reservationId);
+      if (reservation && reservation.tableId) {
+        finalTableId = reservation.tableId;
+      }
+    }
     
     const order = new Order({
       ...rest,
+      tableId: finalTableId,
       orderItemId,
       totalPrice: 0, // Giá ban đầu luôn là 0
       orderStatus: 'Serving',
@@ -33,7 +95,7 @@ exports.createOrder = async (req, res) => {
     });
 
     await order.save();
-    res.status(201).json(enrichOrder(order, items));
+    res.status(201).json(await enrichOrder(order, items));
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -44,10 +106,10 @@ exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find();
     const allOrderItems = await OrderItem.find();
-    const result = orders.map(order => {
+    const result = await Promise.all(orders.map(async (order) => {
       const items = allOrderItems.filter(item => order.orderItemId.map(String).includes(String(item._id)));
-      return enrichOrder(order, items);
-    });
+      return await enrichOrder(order, items);
+    }));
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -60,7 +122,7 @@ exports.getOrderById = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
     const items = await OrderItem.find({ _id: { $in: order.orderItemId } });
-    res.json(enrichOrder(order, items));
+    res.json(await enrichOrder(order, items));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -44,6 +44,30 @@ const tableController = {
     }
   },
 
+  getTableById: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const table = await tableModel.findById(id);
+      if (!table) {
+        return res.status(404).json({
+          message: "Table not found",
+          success: false,
+        });
+      }
+      res.status(200).json({
+        message: "Get table successfully",
+        table: table,
+        success: true,
+      });
+    } catch (error) {
+      console.error("Error getting table by ID: ", error);
+      res.status(500).json({
+        message: "Internal server error",
+        success: false,
+      });
+    }
+  },
+
   updateTable: async (req, res) => {
     try {
       const { id } = req.params;

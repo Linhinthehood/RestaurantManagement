@@ -1,13 +1,13 @@
 version: '3.8'
 services:
-  # user-service:
-  #   build: ./backend/user-service
-  #   ports:
-  #     - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
-  #   environment:
-  #     - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${USER_DB}
-  #   # depends_on:
-  #   #   - mongo
+  user-service:
+    build: ./backend/user-service
+    ports:
+      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
+    environment:
+      - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${USER_DB}
+    # depends_on:
+    #   - mongo
 
   reservation-service:
     build: ./backend/reservation-service
@@ -36,14 +36,14 @@ services:
     # depends_on:
     #   - mongo
 
-  # table-service:
-  #   build: ./backend/table-service
-  #   ports:
-  #     - "${TABLE_SERVICE_PORT}:${TABLE_SERVICE_PORT}"
-  #   environment:
-  #     - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${TABLE_DB}
-  #   # depends_on:
-  #   #   - mongo
+  table-service:
+    build: ./backend/table-service
+    ports:
+      - "${TABLE_SERVICE_PORT}:${TABLE_SERVICE_PORT}"
+    environment:
+      - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${TABLE_DB}
+    # depends_on:
+    #   - mongo
 
   payment-service:
     build: ./backend/payment-service

@@ -1,6 +1,6 @@
 const OrderItem = require('../models/OrderItem');
 const Order = require('../models/Order');
-const axios = require('axios');
+const ExternalService = require('../services/externalService');
 
 // Helper: kiểm tra flow chuyển trạng thái
 const canChangeStatus = (current, next) => {
@@ -20,9 +20,7 @@ exports.createOrderItem = async (req, res) => {
     const { foodId, quantity, note, orderId } = req.body;
     if (!orderId) return res.status(400).json({ error: 'orderId is required' });
     // Gọi API food-service để lấy thông tin food
-    const foodServiceUrl = process.env.FOOD_SERVICE_URL;
-    const foodRes = await axios.get(`${foodServiceUrl}/api/foods/${foodId}`);
-    const food = foodRes.data;
+    const food = await ExternalService.getFoodById(foodId);
 
     if (!food) {
       return res.status(404).json({ error: 'Food not found' });
@@ -58,7 +56,7 @@ exports.createOrderItem = async (req, res) => {
 
     // Cập nhật quantity của food
     const newQuantity = food.quantity - quantity;
-    await axios.put(`${foodServiceUrl}/api/foods/${foodId}`, { quantity: newQuantity });
+    await ExternalService.updateFoodQuantity(foodId, newQuantity);
     
     res.status(201).json({
       ...orderItem.toObject(),
@@ -120,12 +118,10 @@ exports.updateOrderItemStatus = async (req, res) => {
     // 2. Cập nhật lại quantity cho food item khi order item được trả về "Cancelled"
     if (status === 'Cancelled' && oldStatus !== 'Cancelled') {
       try {
-        const foodServiceUrl = process.env.FOOD_SERVICE_URL ;
-        const foodRes = await axios.get(`${foodServiceUrl}/api/foods/${orderItem.foodId}`);
-        const food = foodRes.data;
+        const food = await ExternalService.getFoodById(orderItem.foodId);
         if (food) {
           const newQuantity = food.quantity + orderItem.quantity;
-          await axios.put(`${foodServiceUrl}/api/foods/${orderItem.foodId}`, { quantity: newQuantity });
+          await ExternalService.updateFoodQuantity(orderItem.foodId, newQuantity);
         }
       } catch (error) {
         console.error('Lỗi khi cập nhật lại số lượng món ăn:', error.message);

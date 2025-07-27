@@ -20,6 +20,7 @@ route.put(
 );
 route.put("/:id/checkin", reservationController.checkInReservation);
 route.get("/today", reservationController.getAllReservations);
+route.get("/:id", reservationController.getReservationById);
 route.get("/customer/:phone", reservationController.getReservationByPhone);
 route.get("/available", reservationController.getAvailableTables);
 route.put("/:id/cancel", reservationController.cancelReservation);

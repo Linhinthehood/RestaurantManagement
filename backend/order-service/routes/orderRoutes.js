@@ -10,7 +10,7 @@ const {
   checkAllOrderItemsServedOrCancelled
 } = require('../middlewares/orderValidation');
 
-router.post('/', validateCreateOrder, orderController.createOrder);
+router.post('/',validateCreateOrder, orderController.createOrder);
 router.get('/', orderController.getAllOrders);
 router.get('/by-reservation/:reservationId', validateObjectId('id'), orderController.getOrdersByReservationId);
 router.get('/:id', validateObjectId('id'), orderController.getOrderById);

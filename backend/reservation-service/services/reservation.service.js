@@ -80,6 +80,11 @@ const reservationService = {
     return reservations;
   },
 
+  getReservationById: async (id) => {
+    const reservation = await reservationModel.findById(id);
+    return reservation;
+  },
+
   getReservationByPhone: async (phone) => {
     const reservations = await reservationModel
       .find({ customerPhone: phone })
