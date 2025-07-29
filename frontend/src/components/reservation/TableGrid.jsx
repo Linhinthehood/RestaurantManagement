@@ -12,7 +12,7 @@ const TableGrid = () => {
       {tables.map((table) => (
         <div
           key={table.id}
-          className={`w-[100px] h-[100px] p-4 rounded shadow ${
+          className={`p-4 rounded shadow ${
             table.status === "Available"
               ? "bg-green-500"
               : table.status === "Reserved"

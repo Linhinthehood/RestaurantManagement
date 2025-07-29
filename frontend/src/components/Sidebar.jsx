@@ -1,16 +1,35 @@
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
-const Sidebar = ({ links }) => {
+const Sidebar = () => {
+  const menuItems = [
+    { label: "Dashboard", path: "/" },
+    { label: "Table Management", path: "/table-management" },
+    { label: "Orders", path: "/orders" },
+    { label: "Kitchen", path: "/kitchen" },
+    { label: "Register User", path: "/manager/register" },
+    { label: "Inventory", path: "/manager/inventory" },
+    { label: "Reports", path: "/manager/reports" },
+  ];
   return (
-    <aside className="w-48 bg-gray-100 p-4 shadow">
-      <nav className="flex flex-col gap-2">
-        {links.map((link) => (
-          <Link key={link.path} to={link.path} className="hover:text-blue-500">
-            {link.label}
-          </Link>
+    <div className="w-64 bg-gray-800 text-white h-full p-4">
+      <h2 className="text-xl font-bold mb-6">Restaurant System</h2>
+      <ul className="space-y-4">
+        {menuItems.map((item) => (
+          <li key={item.path}>
+            <NavLink
+              to={item.path}
+              className={({ isActive }) =>
+                `block px-4 py-2 rounded hover:bg-gray-700 ${
+                  isActive ? "bg-gray-700" : ""
+                }`
+              }
+            >
+              {item.label}
+            </NavLink>
+          </li>
         ))}
-      </nav>
-    </aside>
+      </ul>
+    </div>
   );
 };
 
