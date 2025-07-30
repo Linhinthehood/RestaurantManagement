@@ -7,6 +7,7 @@ const route = express.Router();
 
 route.post(
   "/",
+  authorize("Manager", "Receptionist"),
   reservationMiddleware.validateReservationInput,
   reservationMiddleware.validateReservationTime,
   reservationController.createReservation

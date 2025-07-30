@@ -11,10 +11,11 @@ const ReservationList = ({ filterStatus }) => {
     try {
       const url =
         filterStatus === "all"
-          ? "localhost:3000/api/v1/reservations"
-          : `localhost:3000/api/v1/reservations?status=${filterStatus}`;
+          ? "http://localhost:3002/api/v1/reservations"
+          : `http://localhost:3002/api/v1/reservations?status=${filterStatus}`;
       const res = await axios.get(url);
-      setReservations(res.data);
+      console.log("Fetched reservations:", res.data.reservations);
+      setReservations(res.data.reservations || []);
     } catch (error) {
       console.error("Failed to fetch reservations:", error);
     } finally {
@@ -35,8 +36,8 @@ const ReservationList = ({ filterStatus }) => {
         <p className="text-gray-500">No reservations found.</p>
       ) : (
         reservations.map((c) => (
-          <div key={c.id} className="border p-2 mb-2 rounded">
-            <div>{c.name}</div>
+          <div key={c._id} className="border p-2 mb-2 rounded">
+            <div>{c.customerId.name}</div>
             <div className="text-sm text-gray-400">{c.time}</div>
             <div className="text-xs italic text-yellow-400">{c.status}</div>
           </div>

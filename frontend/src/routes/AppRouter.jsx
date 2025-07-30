@@ -1,60 +1,43 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from "../pages/auth/Login";
+import { useRoutes } from "react-router-dom";
+import DashboardLayout from "../layouts/DashboardLayout";
 
-// Layouts
-import WaiterLayout from "../layouts/WaiterLayout";
-import ChefLayout from "../layouts/ChefLayout";
-import ManagerLayout from "../layouts/ManagerLayout";
-import CustomerLayout from "../layouts/CustomerLayout";
+import DashboardHome from "../pages/dashboard/DashboardHome";
+import TableManagementPage from "../pages/table-management/TableManagementPage";
+import OrderPage from "../pages/orders/OrderPage";
+import KitchenPage from "../pages/kitchen/KitchenPage";
+import NotFoundPage from "../pages/not-found/NotFoundPage";
+import LoginPage from "../pages/auth/LoginPage";
+import RegisterUserPage from "../pages/manager/RegisterUserPage";
+import InventoryPage from "../pages/manager/InventoryPage";
+import ReportPage from "../pages/manager/ReportPage";
 
-// Waiter Pages
-import AssignTable from "../pages/waiter/AssignTable";
-import OrderPage from "../pages/waiter/OrderPage";
+const AppRoutes = () => {
+  // const user = JSON.parse(localStorage.getItem('user'));
 
-// Chef Pages
-import KitchenDashboard from "../pages/chef/KitchenDashboard";
+  const routes = useRoutes([
+    { path: "/login", element: <LoginPage /> },
 
-// Manager Pages
-import IngredientCheck from "../pages/manager/IngredientCheck";
+    {
+      path: "/",
+      // element: element: user ? <DashboardLayout /> : <Navigate to="/login" />,
+      element: <DashboardLayout />,
+      children: [
+        { path: "", element: <DashboardHome /> },
+        { path: "table-management", element: <TableManagementPage /> },
+        { path: "orders", element: <OrderPage /> },
+        { path: "kitchen", element: <KitchenPage /> },
 
-// Customer Pages
-import ReservationForm from "../pages/customer/ReservationForm";
+        // route này là cho manager nhé
+        { path: "manager/register", element: <RegisterUserPage /> },
+        { path: "manager/inventory", element: <InventoryPage /> },
+        { path: "manager/reports", element: <ReportPage /> },
+      ],
+    },
 
-// Payment Pages
-import CheckoutPage from "../pages/payment/CheckoutPage";
+    { path: "*", element: <NotFoundPage /> },
+  ]);
 
-const AppRouter = () => {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Login />} />
-
-        {/* Waiter */}
-        <Route path="waiter" element={<WaiterLayout />}>
-          <Route path="/waiter/assign-table" element={<AssignTable />} />
-          <Route path="/waiter/order" element={<OrderPage />} />
-        </Route>
-
-        {/* Chef */}
-        <Route path="/chef" element={<ChefLayout />}>
-          <Route path="/chef/dashboard" element={<KitchenDashboard />} />
-        </Route>
-
-        {/* Manager */}
-        <Route path="manager" element={<ManagerLayout />}>
-          <Route path="/manager/ingredients" element={<IngredientCheck />} />
-        </Route>
-
-        {/* Customer */}
-        <Route path="customer" element={<CustomerLayout />}>
-          <Route path="/customer/reserve" element={<ReservationForm />} />
-        </Route>
-
-        {/* Payment */}
-        <Route path="/payment/checkout" element={<CheckoutPage />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return routes;
 };
 
-export default AppRouter;
+export default AppRoutes;
