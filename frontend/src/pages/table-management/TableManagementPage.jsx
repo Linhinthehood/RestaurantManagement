@@ -1,11 +1,6 @@
 import React, { useState } from "react";
-import DaySelector from "../../components/reservation/DaySelector";
-import TimeColumn from "../../components/reservation/TimeColumn";
 import TableGrid from "../../components/reservation/TableGrid";
-import FilterPanel from "../../components/reservation/FilterPanel";
-import ReservationList from "../../components/reservation/ReservationList";
 import {
-  CalendarDropDown,
   DateFilter,
   MiniCalendar,
   TimeFilter,
