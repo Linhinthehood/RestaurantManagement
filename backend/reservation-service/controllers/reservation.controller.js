@@ -35,13 +35,10 @@ const reservationController = {
     try {
       const { id } = req.params;
       const { tableId } = req.body;
-      const staffId = req.user?.id;
       const updatedReservation = await reservationService.assignTable(
         id,
-        tableId,
-        staffId
+        tableId
       );
-      console.log("StaffId: ", staffId);
       res.status(200).json({
         message: "Table assigned successfully",
         reservation: updatedReservation,
@@ -140,12 +137,12 @@ const reservationController = {
       );
       if (!reservations || reservations.length === 0) {
         return res.status(404).json({
-          message: "Reservation not found",
+          message: `Không tìm thấy reservation nào cho số điện thoại ${phone}`,
           success: false,
         });
       }
       res.status(200).json({
-        message: `Found ${reservations.length} reservation(s) for phone ${phone}`,
+        message: `Tìm thấy ${reservations.length} reservation(s) cho số điện thoại ${phone}`,
         reservations: reservations,
         success: true,
       });

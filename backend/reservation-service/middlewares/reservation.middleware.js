@@ -13,6 +13,15 @@ const reservationMiddleware = {
           });
         }
       }
+      
+      // Validate phone number format
+      const phoneRegex = /^[0-9]{10,11}$/;
+      if (!phoneRegex.test(data.customerPhone)) {
+        return res.status(400).json({
+          message: "Số điện thoại không hợp lệ (phải có 10-11 chữ số)",
+          success: false,
+        });
+      }
     }
 
     if (!data.quantity) {
@@ -76,6 +85,27 @@ const reservationMiddleware = {
       });
     }
 
+    next();
+  },
+
+  validatePhoneNumber: (req, res, next) => {
+    const { phone } = req.params;
+    
+    if (!phone) {
+      return res.status(400).json({
+        message: "Số điện thoại là bắt buộc",
+        success: false,
+      });
+    }
+    
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({
+        message: "Số điện thoại không hợp lệ (phải có 10-11 chữ số)",
+        success: false,
+      });
+    }
+    
     next();
   },
 };

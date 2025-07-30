@@ -9,6 +9,9 @@ router.post('/register', AuthController.registerUser);
 router.post('/login', AuthController.loginUser);
 
 // Protected routes - require authentication
+router.use('/profile', protect);
+router.use('/change-password', protect);
+router.use('/users', protect);
 
 // User profile routes
 router.get('/profile', AuthController.getMyProfile);
@@ -16,9 +19,9 @@ router.put('/profile', AuthController.updateProfile);
 router.put('/change-password', AuthController.changePassword);
 
 // Manager only routes
-router.get('/users', AuthController.getUsers);
-router.get('/users/:id', AuthController.getUserById);
-router.put('/users/:id', AuthController.updateUser);
-router.delete('/users/:id', AuthController.deleteUser);
+router.get('/users', authorize('Manager'), AuthController.getUsers);
+router.get('/users/:id', authorize('Manager'), AuthController.getUserById);
+router.put('/users/:id', authorize('Manager'), AuthController.updateUser);
+router.delete('/users/:id', authorize('Manager'), AuthController.deleteUser);
 
 export default router;

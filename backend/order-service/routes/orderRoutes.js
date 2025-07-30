@@ -9,6 +9,7 @@ const {
   validateObjectId,
   checkAllOrderItemsServedOrCancelled
 } = require('../middlewares/orderValidation');
+const { protect, authorize } = require('../middlewares/authMiddleware');
 
 router.post('/',validateCreateOrder, orderController.createOrder);
 router.get('/', orderController.getAllOrders);

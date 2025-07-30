@@ -76,19 +76,39 @@ const reservationService = {
   },
 
   getAllReservations: async () => {
-    const reservations = await reservationModel.find().sort({ checkInTime: 1 });
+    const reservations = await reservationModel
+      .find()
+      .populate('customerId', 'name phone email')
+      .sort({ checkInTime: 1 });
     return reservations;
   },
 
   getReservationById: async (id) => {
-    const reservation = await reservationModel.findById(id);
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return null;
+    }
+    
+    const reservation = await reservationModel
+      .findById(id)
+      .populate('customerId', 'name phone email');
     return reservation;
   },
 
   getReservationByPhone: async (phone) => {
+    // First find customer by phone
+    const customer = await customerModel.findOne({ phone: phone });
+    
+    if (!customer) {
+      return [];
+    }
+    
+    // Then find reservations by customerId
     const reservations = await reservationModel
-      .find({ customerPhone: phone })
+      .find({ customerId: customer._id })
+      .populate('customerId', 'name phone email')
       .sort({ checkInTime: 1 });
+    
     return reservations;
   },
 
