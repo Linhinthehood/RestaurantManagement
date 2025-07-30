@@ -2,7 +2,7 @@ const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
 const ExternalService = require('../services/externalService');
 
-async function enrichOrder(order, orderItems = []) {
+async function enrichOrder(order, orderItems = [], req) {
   try {
     console.log('Enriching order:', order._id);
     console.log('Order tableId:', order.tableId);
@@ -10,35 +10,80 @@ async function enrichOrder(order, orderItems = []) {
     console.log('Order reservationId:', order.reservationId);
     
     // Lấy thông tin table
-    const table = order.tableId ? await ExternalService.getTableById(order.tableId) : null;
+    const table = order.tableId ? await ExternalService.getTableById(order.tableId, req.headers.authorization) : null;
     console.log('Table data:', table);
     
     // Lấy thông tin user
-    const user = order.userId ? await ExternalService.getUserById(order.userId) : null;
+    const user = order.userId ? await ExternalService.getUserById(order.userId, req.headers.authorization) : null;
     console.log('User data:', user);
     
     // Lấy thông tin reservation và customer
     let reservation = null;
     let customer = null;
     if (order.reservationId) {
-      reservation = await ExternalService.getReservationById(order.reservationId);
+      reservation = await ExternalService.getReservationById(order.reservationId, req.headers.authorization);
       console.log('Reservation data:', reservation);
       if (reservation && reservation.customerId) {
         // Lấy thông tin customer từ reservation service
-        customer = await ExternalService.getCustomerById(reservation.customerId);
+        customer = await ExternalService.getCustomerById(reservation.customerId, req.headers.authorization);
         console.log('Customer data:', customer);
       }
     }
     
     // Xử lý user data từ response structure
-    const userData = user && user.data && user.data.user ? user.data.user : user;
+    let userData = null;
+    if (user) {
+      if (user.data && user.data.user) {
+        userData = user.data.user;
+      } else if (user.user) {
+        userData = user.user;
+      } else {
+        userData = user;
+      }
+    }
+    
+    // Xử lý table data từ response structure
+    let tableData = null;
+    if (table) {
+      if (table.data && table.data.table) {
+        tableData = table.data.table;
+      } else if (table.table) {
+        tableData = table.table;
+      } else {
+        tableData = table;
+      }
+    }
+    
+    // Xử lý reservation data từ response structure
+    let reservationData = null;
+    if (reservation) {
+      if (reservation.data && reservation.data.reservation) {
+        reservationData = reservation.data.reservation;
+      } else if (reservation.reservation) {
+        reservationData = reservation.reservation;
+      } else {
+        reservationData = reservation;
+      }
+    }
+    
+    // Xử lý customer data từ response structure
+    let customerData = null;
+    if (customer) {
+      if (customer.data && customer.data.customer) {
+        customerData = customer.data.customer;
+      } else if (customer.customer) {
+        customerData = customer.customer;
+      } else {
+        customerData = customer;
+      }
+    }
     
     return {
       ...order.toObject(),
       // Thông tin bàn
-      tableName: table ? table.name : null,
-      tableCapacity: table ? table.capacity : null,
-      tableType: table ? table.type : null,
+      tableName: tableData ? tableData.name : null,
+      tableCapacity: tableData ? tableData.capacity : null,
+      tableType: tableData ? tableData.type : null,
       
       // Thông tin nhân viên
       userName: userData ? userData.name : null,
@@ -46,14 +91,14 @@ async function enrichOrder(order, orderItems = []) {
       userEmail: userData ? userData.email : null,
       
       // Thông tin khách hàng
-      customerName: customer ? customer.name : null,
-      customerPhone: customer ? customer.phone : null, // Sửa từ phoneNumber thành phone
-      customerEmail: customer ? customer.email : null,
-      customerId: reservation ? reservation.customerId : null,
+      customerName: customerData ? customerData.name : null,
+      customerPhone: customerData ? (customerData.phone || customerData.phoneNumber) : null,
+      customerEmail: customerData ? customerData.email : null,
+      customerId: reservationData ? reservationData.customerId : null,
       
       // Thông tin reservation
-      reservationStatus: reservation ? reservation.status : null,
-      reservationQuantity: reservation ? reservation.quantity : null,
+      reservationStatus: reservationData ? reservationData.status : null,
+      reservationQuantity: reservationData ? reservationData.quantity : null,
       
       orderItems: orderItems.map(item => item.toObject())
     };
@@ -73,21 +118,71 @@ async function enrichOrder(order, orderItems = []) {
 // Tạo mới Order
 exports.createOrder = async (req, res) => {
   try {
-    const { orderItemId = [], tableId, ...rest } = req.body;
-    const items = orderItemId.length > 0 ? await OrderItem.find({ _id: { $in: orderItemId } }) : [];
+    const { orderItemId = [], tableId, reservationId, userId, ...rest } = req.body;
     
-    // Nếu có reservationId, lấy tableId từ reservation
-    let finalTableId = tableId;
-    if (rest.reservationId && !tableId) {
-      const reservation = await ExternalService.getReservationById(rest.reservationId);
-      if (reservation && reservation.tableId) {
-        finalTableId = reservation.tableId;
+    // Kiểm tra và validate các ID trước khi tạo order
+    const validationErrors = [];
+    
+    // 1. Kiểm tra reservationId nếu có
+    if (reservationId) {
+      const reservation = await ExternalService.getReservationById(reservationId, req.headers.authorization);
+      if (!reservation) {
+        validationErrors.push(`Reservation với ID ${reservationId} không tồn tại`);
+      } else {
+        console.log('Reservation found:', reservation);
+        // Nếu có reservation, lấy tableId từ reservation nếu không có tableId
+        if (!tableId && reservation.tableId) {
+          rest.tableId = reservation.tableId;
+        }
       }
     }
     
+    // 2. Kiểm tra userId nếu có
+    if (userId) {
+      const user = await ExternalService.getUserById(userId, req.headers.authorization);
+      if (!user) {
+        validationErrors.push(`User với ID ${userId} không tồn tại`);
+      } else {
+        console.log('User found:', user);
+      }
+    }
+    
+    // 3. Kiểm tra tableId nếu có
+    if (tableId) {
+      const table = await ExternalService.getTableById(tableId, req.headers.authorization);
+      if (!table) {
+        validationErrors.push(`Table với ID ${tableId} không tồn tại`);
+      } else {
+        console.log('Table found:', table);
+      }
+    }
+    
+    // 4. Kiểm tra orderItemId nếu có
+    if (orderItemId && orderItemId.length > 0) {
+      const items = await OrderItem.find({ _id: { $in: orderItemId } });
+      if (items.length !== orderItemId.length) {
+        const foundIds = items.map(item => item._id.toString());
+        const missingIds = orderItemId.filter(id => !foundIds.includes(id));
+        validationErrors.push(`OrderItem với ID ${missingIds.join(', ')} không tồn tại`);
+      }
+    }
+    
+    // Nếu có lỗi validation, trả về lỗi
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: validationErrors
+      });
+    }
+    
+    // Lấy order items nếu có
+    const items = orderItemId.length > 0 ? await OrderItem.find({ _id: { $in: orderItemId } }) : [];
+    
+    // Tạo order mới
     const order = new Order({
       ...rest,
-      tableId: finalTableId,
+      tableId: rest.tableId || tableId,
       orderItemId,
       totalPrice: 0, // Giá ban đầu luôn là 0
       orderStatus: 'Serving',
@@ -95,9 +190,22 @@ exports.createOrder = async (req, res) => {
     });
 
     await order.save();
-    res.status(201).json(await enrichOrder(order, items));
+    
+    // Enrich order với thông tin đầy đủ
+    const enrichedOrder = await enrichOrder(order, items, req);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Order created successfully',
+      data: enrichedOrder
+    });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error('Error creating order:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: err.message 
+    });
   }
 };
 
@@ -108,7 +216,7 @@ exports.getAllOrders = async (req, res) => {
     const allOrderItems = await OrderItem.find();
     const result = await Promise.all(orders.map(async (order) => {
       const items = allOrderItems.filter(item => order.orderItemId.map(String).includes(String(item._id)));
-      return await enrichOrder(order, items);
+      return await enrichOrder(order, items, req);
     }));
     res.json(result);
   } catch (err) {
@@ -122,7 +230,7 @@ exports.getOrderById = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
     const items = await OrderItem.find({ _id: { $in: order.orderItemId } });
-    res.json(await enrichOrder(order, items));
+    res.json(await enrichOrder(order, items, req));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -195,4 +303,4 @@ exports.deleteOrder = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}; 
+};

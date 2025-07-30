@@ -1,19 +1,19 @@
 const axios = require('axios');
 
 // Base URLs cho từng service (trong Docker network)
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:3001';
-const RESERVATION_SERVICE_URL = process.env.RESERVATION_SERVICE_URL || 'http://localhost:3002';
-const FOOD_SERVICE_URL = process.env.FOOD_SERVICE_URL || 'http://localhost:3003';
-const TABLE_SERVICE_URL = process.env.TABLE_SERVICE_URL || 'http://localhost:3005';
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL ;
+const RESERVATION_SERVICE_URL = process.env.RESERVATION_SERVICE_URL ;
+const FOOD_SERVICE_URL = process.env.FOOD_SERVICE_URL ;
+const TABLE_SERVICE_URL = process.env.TABLE_SERVICE_URL ;
 
 class ExternalService {
   // Lấy thông tin user từ user-service
-  static async getUserById(userId) {
+  static async getUserById(userId, token) {
     try {
       console.log(`Fetching user from: ${USER_SERVICE_URL}/api/auth/users/${userId}`);
       const response = await axios.get(`${USER_SERVICE_URL}/api/auth/users/${userId}`, {
         headers: {
-          'Authorization': 'Bearer fake-token' // Giả lập token cho testing
+          Authorization: token
         }
       });
       console.log('User data received:', response.data);
@@ -26,10 +26,14 @@ class ExternalService {
   }
 
   // Lấy thông tin reservation từ reservation-service
-  static async getReservationById(reservationId) {
+  static async getReservationById(reservationId, token) {
     try {
       console.log(`Fetching reservation from: ${RESERVATION_SERVICE_URL}/api/v1/reservations/${reservationId}`);
-      const response = await axios.get(`${RESERVATION_SERVICE_URL}/api/v1/reservations/${reservationId}`);
+      const response = await axios.get(`${RESERVATION_SERVICE_URL}/api/v1/reservations/${reservationId}`, {
+        headers: {
+          Authorization: token
+        }
+      });
       console.log('Reservation data received:', response.data);
       // Trả về reservation object từ response
       return response.data.reservation || response.data;
@@ -41,10 +45,14 @@ class ExternalService {
   }
 
   // Lấy thông tin customer từ reservation-service
-  static async getCustomerById(customerId) {
+  static async getCustomerById(customerId, token) {
     try {
       console.log(`Fetching customer from: ${RESERVATION_SERVICE_URL}/api/v1/customers/${customerId}`);
-      const response = await axios.get(`${RESERVATION_SERVICE_URL}/api/v1/customers/${customerId}`);
+      const response = await axios.get(`${RESERVATION_SERVICE_URL}/api/v1/customers/${customerId}`, {
+        headers: {
+          Authorization: token
+        }
+      });
       console.log('Customer data received:', response.data);
       // Trả về customer object từ response
       return response.data.customer || response.data;
@@ -56,10 +64,14 @@ class ExternalService {
   }
 
   // Lấy thông tin table từ table-service
-  static async getTableById(tableId) {
+  static async getTableById(tableId, token) {
     try {
       console.log(`Fetching table from: ${TABLE_SERVICE_URL}/api/v1/tables/${tableId}`);
-      const response = await axios.get(`${TABLE_SERVICE_URL}/api/v1/tables/${tableId}`);
+      const response = await axios.get(`${TABLE_SERVICE_URL}/api/v1/tables/${tableId}`, {
+        headers: {
+          Authorization: token
+        }
+      });
       console.log('Table data received:', response.data);
       // Trả về table object từ response
       return response.data.table || response.data;

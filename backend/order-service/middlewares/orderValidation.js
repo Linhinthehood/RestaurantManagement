@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
-// Nếu có models User, Table, Reservation thì require ở đây
-// const User = require('../models/User');
-// const Table = require('../models/Table');
-// const Reservation = require('../models/Reservation');
 
 // Validate ObjectId
 const validateObjectId = (field) => (req, res, next) => {

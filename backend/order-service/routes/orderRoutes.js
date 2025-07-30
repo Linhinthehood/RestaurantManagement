@@ -9,14 +9,14 @@ const {
   validateObjectId,
   checkAllOrderItemsServedOrCancelled
 } = require('../middlewares/orderValidation');
-const { protect, authorize } = require('../middlewares/authMiddleware');
+const { protect, authorize, requireOrderAccess } = require('../middlewares/authMiddleware');
 
-router.post('/',validateCreateOrder, orderController.createOrder);
-router.get('/', orderController.getAllOrders);
-router.get('/by-reservation/:reservationId', validateObjectId('id'), orderController.getOrdersByReservationId);
-router.get('/:id', validateObjectId('id'), orderController.getOrderById);
-router.put('/:id', validateObjectId('id'), validateUpdateOrder, orderController.updateOrder);
-router.patch('/:id/status', validateObjectId('id'), validateUpdateOrderStatus, checkAllOrderItemsServedOrCancelled, orderController.updateOrderStatus);
-router.delete('/:id', validateObjectId('id'), validateDeleteOrder, orderController.deleteOrder);
+router.post('/',protect, requireOrderAccess, validateCreateOrder, orderController.createOrder);
+router.get('/', protect, requireOrderAccess, orderController.getAllOrders);
+router.get('/by-reservation/:reservationId',protect, requireOrderAccess, validateObjectId('id'), orderController.getOrdersByReservationId);
+router.get('/:id', protect, requireOrderAccess, validateObjectId('id'), orderController.getOrderById);
+router.put('/:id', protect, requireOrderAccess, validateObjectId('id'), validateUpdateOrder, orderController.updateOrder);
+router.patch('/:id/status', protect, requireOrderAccess, validateObjectId('id'), validateUpdateOrderStatus, checkAllOrderItemsServedOrCancelled, orderController.updateOrderStatus);
+router.delete('/:id', protect, requireOrderAccess, validateObjectId('id'), validateDeleteOrder, orderController.deleteOrder);
 
 module.exports = router; 

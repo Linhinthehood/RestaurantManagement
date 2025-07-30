@@ -6,6 +6,9 @@ services:
       - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${USER_DB}
+      - JWT_SECRET_KEY=your_jwt_secret_key_here
+      - JWT_EXPIRE_TIME=7d
+      - NODE_ENV=development
     # depends_on:
     #   - mongo
 
@@ -15,6 +18,9 @@ services:
       - "${RESERVATION_SERVICE_PORT}:${RESERVATION_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${RESERVATION_DB}
+      - USER_SERVICE_URL=http://user-service:3001
+      - TABLE_SERVICE_URL=http://table-service:3005/api/v1
+      - NODE_ENV=development
     # depends_on:
     #   - mongo
 
@@ -24,6 +30,8 @@ services:
       - "${FOOD_SERVICE_PORT}:${FOOD_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${FOOD_DB}
+      - USER_SERVICE_URL=http://user-service:3001
+      - NODE_ENV=development
     # depends_on:
     #   - mongo
 
@@ -33,6 +41,11 @@ services:
       - "${ORDER_SERVICE_PORT}:${ORDER_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${ORDER_DB}
+      - USER_SERVICE_URL=http://user-service:3001
+      - TABLE_SERVICE_URL=http://table-service:3005
+      - RESERVATION_SERVICE_URL=http://reservation-service:3002
+      - FOOD_SERVICE_URL=http://food-service:3003
+      - NODE_ENV=development
     # depends_on:
     #   - mongo
 
@@ -42,6 +55,9 @@ services:
       - "${TABLE_SERVICE_PORT}:${TABLE_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${TABLE_DB}
+      - USER_SERVICE_URL=http://user-service:3001
+      - RESERVATION_SERVICE_URL=http://reservation-service:3002/api/v1
+      - NODE_ENV=development
     # depends_on:
     #   - mongo
 
@@ -51,6 +67,8 @@ services:
       - "${PAYMENT_SERVICE_PORT}:${PAYMENT_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${PAYMENT_DB}
+      - USER_SERVICE_URL=http://user-service:3001
+      - NODE_ENV=development
     # depends_on:
     #   - mongo
 
@@ -59,11 +77,11 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      # - user-service
+      - user-service
       - reservation-service
       - food-service
       - order-service
-      # - table-service
+      - table-service
       - payment-service
     restart: unless-stopped
 
