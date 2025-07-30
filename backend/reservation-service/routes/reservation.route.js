@@ -21,9 +21,14 @@ route.put(
   reservationController.assignTable
 );
 route.put("/:id/checkin", protect, reservationController.checkInReservation);
-route.get("/today", protect, reservationController.getAllReservations);
+route.get("/", protect, reservationController.getAllReservations);
 route.get("/available", protect, reservationController.getAvailableTables);
 route.get("/customer/:phone", protect, reservationMiddleware.validatePhoneNumber, reservationController.getReservationByPhone);
+route.get(
+  "/:id/tables",
+  protect,
+  reservationController.getTablesByReservationId
+);
 route.get("/:id", protect, reservationController.getReservationById);
 route.put("/:id/cancel", protect, reservationController.cancelReservation);
 
