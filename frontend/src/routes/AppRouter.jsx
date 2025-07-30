@@ -11,7 +11,7 @@ import RegisterUserPage from "../pages/manager/RegisterUserPage";
 import InventoryPage from "../pages/manager/InventoryPage";
 import ReportPage from "../pages/manager/ReportPage";
 
-const AppRoutes = () => {
+const AppRouter = () => {
   // const user = JSON.parse(localStorage.getItem('user'));
 
   const routes = useRoutes([
@@ -40,4 +40,4 @@ const AppRoutes = () => {
   return routes;
 };
 
-export default AppRoutes;
+export default AppRouter;
