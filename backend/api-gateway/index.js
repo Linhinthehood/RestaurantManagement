@@ -75,6 +75,12 @@ app.use('/api/orders', createProxyMiddleware({
   pathRewrite: { '^/api/orders': '/api/orders' }
 }));
 
+app.use('/api/order-items', createProxyMiddleware({ 
+  ...proxyOptions,
+  target: 'http://order-service:3004',
+  pathRewrite: { '^/api/order-items': '/api/order-items' }
+}));
+
 app.use('/api/v1/tables', createProxyMiddleware({ 
   ...proxyOptions,
   target: 'http://table-service:3005',
