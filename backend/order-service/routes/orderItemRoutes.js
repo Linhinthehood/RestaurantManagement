@@ -6,12 +6,13 @@ const {
   validateUpdateOrderItem,
   validateObjectId
 } = require('../middlewares/orderItemValidation');
+const { protect, authorize, requireOrderAccess } = require('../middlewares/authMiddleware');
 
-router.post('/', validateCreateOrderItem, orderItemController.createOrderItem);
-router.get('/', orderItemController.getAllOrderItems);
-router.get('/:id', validateObjectId('id'), orderItemController.getOrderItemById);
-router.put('/:id', validateObjectId('id'), validateUpdateOrderItem, orderItemController.updateOrderItem);
-router.patch('/:id/status', validateObjectId('id'), orderItemController.updateOrderItemStatus);
-router.delete('/:id', validateObjectId('id'), orderItemController.deleteOrderItem);
+router.post('/', protect, requireOrderAccess, validateCreateOrderItem, orderItemController.createOrderItem);
+router.get('/', protect, requireOrderAccess, orderItemController.getAllOrderItems);
+router.get('/:id', protect, requireOrderAccess, validateObjectId('id'), orderItemController.getOrderItemById);
+router.put('/:id', protect, requireOrderAccess, validateObjectId('id'), validateUpdateOrderItem, orderItemController.updateOrderItem);
+router.patch('/:id/status', protect, requireOrderAccess, validateObjectId('id'), orderItemController.updateOrderItemStatus);
+router.delete('/:id', protect, requireOrderAccess, validateObjectId('id'), orderItemController.deleteOrderItem);
 
 module.exports = router; 
