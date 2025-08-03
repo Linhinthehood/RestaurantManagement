@@ -79,8 +79,40 @@ const reservationService = {
     const reservations = await reservationModel
       .find()
       .populate('customerId', 'name phone email')
+      .populate('tableHistory')
       .sort({ checkInTime: 1 });
-    return reservations;
+    // Lấy danh sách tableId duy nhất
+    const allTableIds = [
+      ...new Set(
+        reservations
+          .flatMap(r => r.tableHistory.map(th => th.tableId?.toString()))
+          .filter(Boolean)
+      )
+    ];
+    // Gọi sang table-service lấy thông tin các bàn
+    let tableMap = {};
+    if (allTableIds.length > 0) {
+      try {
+        const resp = await tableServiceApi.get(`/tables?ids=${allTableIds.join(',')}`);
+        if (Array.isArray(resp.data.tables)) {
+          tableMap = Object.fromEntries(resp.data.tables.map(t => [t._id, t]));
+        }
+      } catch (e) {
+        console.error('Error fetching tables from table-service:', e.message);
+      }
+    }
+    // Gắn thông tin tên bàn vào từng reservation
+    const result = reservations.map(r => {
+      const tables = r.tableHistory
+        .map(th => tableMap[th.tableId?.toString()])
+        .filter(Boolean)
+        .map(t => ({ _id: t._id, name: t.name }));
+      return {
+        ...r.toObject(),
+        tables
+      };
+    });
+    return result;
   },
 
   getReservationById: async (id) => {
@@ -91,8 +123,40 @@ const reservationService = {
     
     const reservation = await reservationModel
       .findById(id)
-      .populate('customerId', 'name phone email');
-    return reservation;
+      .populate('customerId', 'name phone email')
+      .populate('tableHistory');
+    
+    if (!reservation) return null;
+
+    // Lấy danh sách tableId duy nhất
+    const tableIds = [
+      ...new Set(reservation.tableHistory.map(th => th.tableId?.toString()).filter(Boolean))
+    ];
+    
+    // Gọi sang table-service lấy thông tin các bàn
+    let tableMap = {};
+    if (tableIds.length > 0) {
+      try {
+        const resp = await tableServiceApi.get(`/tables?ids=${tableIds.join(',')}`);
+        if (Array.isArray(resp.data.tables)) {
+          tableMap = Object.fromEntries(resp.data.tables.map(t => [t._id, t]));
+        }
+      } catch (e) {
+        console.error('Error fetching tables from table-service:', e.message);
+      }
+    }
+    
+    // Gắn thông tin tên bàn vào reservation
+    const tables = reservation.tableHistory
+      .map(th => tableMap[th.tableId?.toString()])
+      .filter(Boolean)
+      .map(t => ({ _id: t._id, name: t.name }));
+    
+    const result = {
+      ...reservation.toObject(),
+      tables
+    };
+    return result;
   },
 
   getReservationByPhone: async (phone) => {
@@ -229,6 +293,15 @@ const reservationService = {
       { tableStatus: "Occupied" }
     );
     return reservation;
+  },
+
+  getTablesByReservationId: async (reservationId) => {
+    // Lấy reservation và tableHistory (không populate tableId vì không có model Table)
+    const reservation = await reservationModel.findById(reservationId).populate('tableHistory');
+    if (!reservation) return [];
+    // Lấy danh sách tableId từ tableHistory
+    const tableIds = reservation.tableHistory.map(th => th.tableId).filter(Boolean);
+    return tableIds;
   },
 };
 

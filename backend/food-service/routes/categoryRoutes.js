@@ -12,8 +12,8 @@ const {
 } = require('../middlewares/authMiddleware');
 
 // Public routes - xem categories (không cần xác thực)
-router.get('/', categoryController.getAllCategories);
-router.get('/:id', validateCategoryObjectId, categoryController.getCategoryById);
+router.get('/',protect, categoryController.getAllCategories);
+router.get('/:id', protect, validateCategoryObjectId, categoryController.getCategoryById);
 
 // Protected routes - quản lý categories (Manager, Chef)
 router.post('/', protect, requireFoodManagement, validateCategoryData, categoryController.createCategory);

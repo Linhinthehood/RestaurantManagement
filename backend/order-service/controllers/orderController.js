@@ -9,28 +9,31 @@ async function enrichOrder(order, orderItems = [], req) {
     console.log('Order userId:', order.userId);
     console.log('Order reservationId:', order.reservationId);
     
-    // Lấy thông tin table
-    const table = order.tableId ? await ExternalService.getTableById(order.tableId, req.headers.authorization) : null;
-    console.log('Table data:', table);
-    
+    // Lấy thông tin table (có thể là 1 hoặc nhiều)
+    let tables = [];
+    if (order.reservationId) {
+      // Gọi sang reservation-service lấy reservation, lấy trường tables
+      const reservationResp = await ExternalService.getReservationById(order.reservationId, req.headers.authorization);
+      let reservationData = null;
+      if (reservationResp) {
+        if (reservationResp.data && reservationResp.data.reservation) {
+          reservationData = reservationResp.data.reservation;
+        } else if (reservationResp.reservation) {
+          reservationData = reservationResp.reservation;
+        } else {
+          reservationData = reservationResp;
+        }
+        if (reservationData && Array.isArray(reservationData.tables)) {
+          tables = reservationData.tables;
+        }
+      }
+    } else if (order.tableId) {
+      const table = await ExternalService.getTableById(order.tableId, req.headers.authorization);
+      if (table) tables = [{ _id: table._id, name: table.name }];
+    }
+
     // Lấy thông tin user
     const user = order.userId ? await ExternalService.getUserById(order.userId, req.headers.authorization) : null;
-    console.log('User data:', user);
-    
-    // Lấy thông tin reservation và customer
-    let reservation = null;
-    let customer = null;
-    if (order.reservationId) {
-      reservation = await ExternalService.getReservationById(order.reservationId, req.headers.authorization);
-      console.log('Reservation data:', reservation);
-      if (reservation && reservation.customerId) {
-        // Lấy thông tin customer từ reservation service
-        customer = await ExternalService.getCustomerById(reservation.customerId, req.headers.authorization);
-        console.log('Customer data:', customer);
-      }
-    }
-    
-    // Xử lý user data từ response structure
     let userData = null;
     if (user) {
       if (user.data && user.data.user) {
@@ -41,21 +44,16 @@ async function enrichOrder(order, orderItems = [], req) {
         userData = user;
       }
     }
-    
-    // Xử lý table data từ response structure
-    let tableData = null;
-    if (table) {
-      if (table.data && table.data.table) {
-        tableData = table.data.table;
-      } else if (table.table) {
-        tableData = table.table;
-      } else {
-        tableData = table;
-      }
+
+    // Lấy thông tin reservation và customer
+    let reservation = null;
+    if (order.reservationId) {
+      reservation = await ExternalService.getReservationById(order.reservationId, req.headers.authorization);
     }
-    
-    // Xử lý reservation data từ response structure
+
+    // Chuẩn hoá reservationData và lấy customer từ reservation
     let reservationData = null;
+    let customerData = null;
     if (reservation) {
       if (reservation.data && reservation.data.reservation) {
         reservationData = reservation.data.reservation;
@@ -64,42 +62,21 @@ async function enrichOrder(order, orderItems = [], req) {
       } else {
         reservationData = reservation;
       }
-    }
-    
-    // Xử lý customer data từ response structure
-    let customerData = null;
-    if (customer) {
-      if (customer.data && customer.data.customer) {
-        customerData = customer.data.customer;
-      } else if (customer.customer) {
-        customerData = customer.customer;
-      } else {
-        customerData = customer;
+      // Lấy customer từ reservation.customerId
+      if (reservationData && reservationData.customerId) {
+        customerData = reservationData.customerId;
       }
     }
-    
+
     return {
       ...order.toObject(),
-      // Thông tin bàn
-      tableName: tableData ? tableData.name : null,
-      tableCapacity: tableData ? tableData.capacity : null,
-      tableType: tableData ? tableData.type : null,
-      
-      // Thông tin nhân viên
-      userName: userData ? userData.name : null,
-      userRole: userData ? userData.role : null,
-      userEmail: userData ? userData.email : null,
-      
-      // Thông tin khách hàng
-      customerName: customerData ? customerData.name : null,
-      customerPhone: customerData ? (customerData.phone || customerData.phoneNumber) : null,
-      customerEmail: customerData ? customerData.email : null,
-      customerId: reservationData ? reservationData.customerId : null,
-      
-      // Thông tin reservation
-      reservationStatus: reservationData ? reservationData.status : null,
-      reservationQuantity: reservationData ? reservationData.quantity : null,
-      
+      tables: tables, // mảng bàn
+      user: userData ? { name: userData.name, role: userData.role } : null, // chỉ giữ name, role
+      customer: customerData, // object customer
+      reservation: reservationData ? {
+        ...reservationData,
+        tables: undefined // xoá trường tables khỏi reservation để tránh trùng lặp
+      } : null, // object reservation
       orderItems: orderItems.map(item => item.toObject())
     };
   } catch (error) {
@@ -184,6 +161,8 @@ exports.createOrder = async (req, res) => {
       ...rest,
       tableId: rest.tableId || tableId,
       orderItemId,
+      userId, // thêm dòng này
+      reservationId, // thêm dòng này
       totalPrice: 0, // Giá ban đầu luôn là 0
       orderStatus: 'Serving',
       orderStatusHistory: [{ status: 'Serving', changedAt: new Date() }]

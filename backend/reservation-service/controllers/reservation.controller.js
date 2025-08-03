@@ -216,6 +216,17 @@ const reservationController = {
       });
     }
   },
+
+  getTablesByReservationId: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const tables = await reservationService.getTablesByReservationId(id);
+      res.status(200).json({ tables });
+    } catch (error) {
+      console.error('Error fetching tables by reservation:', error);
+      res.status(500).json({ message: 'Internal server error', success: false });
+    }
+  },
 };
 
 export default reservationController;

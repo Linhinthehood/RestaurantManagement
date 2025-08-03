@@ -29,6 +29,11 @@ route.get(
   reservationMiddleware.validatePhoneNumber,
   reservationController.getReservationByPhone
 );
+route.get(
+  "/:id/tables",
+  protect,
+  reservationController.getTablesByReservationId
+);
 route.get("/:id", protect, reservationController.getReservationById);
 route.put("/:id/cancel", protect, reservationController.cancelReservation);
 
