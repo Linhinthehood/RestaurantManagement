@@ -13,7 +13,7 @@ const reservationMiddleware = {
           });
         }
       }
-      
+
       // Validate phone number format
       const phoneRegex = /^[0-9]{10,11}$/;
       if (!phoneRegex.test(data.customerPhone)) {
@@ -38,24 +38,24 @@ const reservationMiddleware = {
       });
     }
 
-    if (!data.checkInTime) {
-      return res.status(400).json({
-        message: "Check-in time is required",
-        success: false,
-      });
-    }
+    // if (!data.checkInTime) {
+    //   return res.status(400).json({
+    //     message: "Check-in time is required",
+    //     success: false,
+    //   });
+    // }
     next();
   },
 
   validateReservationTime: (req, res, next) => {
-    const { checkInTime } = req.body;
-    if (!checkInTime) {
+    const { dateStr, timeStr } = req.body;
+    if (!dateStr || !timeStr) {
       return res.status(400).json({
-        message: "Check-in time is required",
+        message: "Date and time is required",
         success: false,
       });
     }
-
+    const checkInTime = new Date(`${dateStr}T${timeStr}:00`);
     const now = new Date();
     const reservationTime = new Date(checkInTime);
     const diffMinutes = (reservationTime - now) / (1000 * 60); // 1000ms = 1s, 60s = 1 minute
@@ -90,14 +90,14 @@ const reservationMiddleware = {
 
   validatePhoneNumber: (req, res, next) => {
     const { phone } = req.params;
-    
+
     if (!phone) {
       return res.status(400).json({
         message: "Số điện thoại là bắt buộc",
         success: false,
       });
     }
-    
+
     const phoneRegex = /^[0-9]{10,11}$/;
     if (!phoneRegex.test(phone)) {
       return res.status(400).json({
@@ -105,7 +105,7 @@ const reservationMiddleware = {
         success: false,
       });
     }
-    
+
     next();
   },
 };

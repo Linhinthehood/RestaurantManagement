@@ -156,9 +156,10 @@ const reservationController = {
 
   getAvailableTables: async (req, res) => {
     try {
-      const { checkInTime, quantity } = req.query;
+      const { date, time, quantity } = req.query;
       const tables = await reservationService.getAvailableTables(
-        checkInTime,
+        date,
+        time,
         quantity
       );
       res.status(200).json({
@@ -223,8 +224,10 @@ const reservationController = {
       const tables = await reservationService.getTablesByReservationId(id);
       res.status(200).json({ tables });
     } catch (error) {
-      console.error('Error fetching tables by reservation:', error);
-      res.status(500).json({ message: 'Internal server error', success: false });
+      console.error("Error fetching tables by reservation:", error);
+      res
+        .status(500)
+        .json({ message: "Internal server error", success: false });
     }
   },
 };

@@ -5,12 +5,55 @@ import {
   MiniCalendar,
   TimeFilter,
 } from "../../components/TableFilter";
+import { useEffect } from "react";
+import axios from "axios";
 
 const TableManagementPage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(
-    new Date().toLocaleTimeString([], { hour: "2-digit" }) + ":00"
+    "09:00"
+    // new Date().toLocaleTimeString([], { hour: "2-digit" }) + ":00"
   );
+  const [tables, setTables] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchAvailableTables();
+  }, [selectedDate, selectedTime]);
+
+  const fetchAvailableTables = async () => {
+    setIsLoading(true);
+    try {
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+      const formattedTime = selectedTime;
+
+      const res = await axios.get(
+        "http://localhost:3000/api/v1/reservations/available",
+        {
+          params: { date: formattedDate, time: formattedTime, quantity: 4 },
+        }
+      );
+      setTables(res.data.tables);
+
+      console.log("Available tables: ", res.data);
+    } catch (error) {
+      console.error("Error fetching available tables: ", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // const assignStatusToTables = (tables, histories) => {
+  //   return tables.map((table) => {
+  //     const history = histories.find((h) => h.tableId === table._id);
+  //     let status = "Available";
+  //     if (history) {
+  //       status = history.status;
+  //     }
+  //     return { ...table, status };
+  //   });
+  // };
+
   // const [filterStatus, setFilterStatus] = useState("pending");
   return (
     // <div className="flex flex-col p-4">
@@ -55,7 +98,11 @@ const TableManagementPage = () => {
           <h2 className="text-xl font-bold mb-2">Tables</h2>
           <div className="grid grid-cols-3 gap-4 p-4">
             {/* Sau này map qua danh sách bàn */}
-            <TableGrid />
+            {isLoading ? (
+              <p>Loading Tables ...</p>
+            ) : (
+              tables.map((table) => <TableGrid key={table._id} table={table} />)
+            )}
           </div>
         </div>
 

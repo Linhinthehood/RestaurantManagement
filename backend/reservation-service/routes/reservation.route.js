@@ -22,7 +22,11 @@ route.put(
 );
 route.put("/:id/checkin", protect, reservationController.checkInReservation);
 route.get("/", protect, reservationController.getAllReservations);
-route.get("/available", protect, reservationController.getAvailableTables);
+route.get(
+  "/available",
+  // protect,
+  reservationController.getAvailableTables
+);
 route.get(
   "/customer/:phone",
   protect,
