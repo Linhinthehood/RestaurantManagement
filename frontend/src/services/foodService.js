@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_BASE_URL = 'http://localhost:3000/api';
 
 // Create axios instance with default config
-const orderAPI = axios.create({
+const foodAPI = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -11,7 +11,7 @@ const orderAPI = axios.create({
 });
 
 // Interceptor to add token to header
-orderAPI.interceptors.request.use(
+foodAPI.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -25,7 +25,7 @@ orderAPI.interceptors.request.use(
 );
 
 // Interceptor to handle response
-orderAPI.interceptors.response.use(
+foodAPI.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
@@ -36,42 +36,37 @@ orderAPI.interceptors.response.use(
   }
 );
 
-// Order Service - Simplified
-export const orderService = {
-  // Get list of arrived reservations with serving orders (if any)
-  getArrivedAndServingReservations: async () => {
+// Food Service
+export const foodService = {
+  // Get all foods
+  getAllFoods: async () => {
     try {
-      const response = await orderAPI.get('/orders/arrived-reservations');
+      const response = await foodAPI.get('/foods');
       return response.data;
     } catch (error) {
-      console.error('Error fetching arrived/serving reservations:', error);
       throw error;
     }
   },
 
-  // Create new order
-  createOrder: async (orderData) => {
+  // Get foods by category
+  getFoodsByCategory: async (categoryId) => {
     try {
-      const response = await orderAPI.post('/orders', orderData);
+      const response = await foodAPI.get(`/foods/category/${categoryId}`);
       return response.data;
     } catch (error) {
-      console.error('Error creating order:', error);
+      throw error;
+    }
+  },
+
+  // Get food by ID
+  getFoodById: async (foodId) => {
+    try {
+      const response = await foodAPI.get(`/foods/${foodId}`);
+      return response.data;
+    } catch (error) {
       throw error;
     }
   }
 };
 
-// Order Item Service
-export const orderItemService = {
-  createOrderItem: async ({ orderId, foodId, quantity }) => {
-    try {
-      const response = await orderAPI.post('/order-items', { orderId, foodId, quantity });
-      return response.data;
-    } catch (error) {
-      console.error('Error creating order item:', error);
-      throw error;
-    }
-  }
-};
-
-export default orderService;
+export default foodService; 

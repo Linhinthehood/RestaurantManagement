@@ -9,10 +9,11 @@ const {
   validateObjectId,
   checkAllOrderItemsServedOrCancelled
 } = require('../middlewares/orderValidation');
-const { protect, authorize, requireOrderAccess } = require('../middlewares/authMiddleware');
+const { protect, requireOrderAccess } = require('../middlewares/authMiddleware');
 
 router.post('/',protect, requireOrderAccess, validateCreateOrder, orderController.createOrder);
 router.get('/', protect, requireOrderAccess, orderController.getAllOrders);
+router.get('/arrived-reservations', protect, requireOrderAccess, orderController.getArrivedReservations);
 router.get('/by-reservation/:reservationId',protect, requireOrderAccess, validateObjectId('id'), orderController.getOrdersByReservationId);
 router.get('/:id', protect, requireOrderAccess, validateObjectId('id'), orderController.getOrderById);
 router.put('/:id', protect, requireOrderAccess, validateObjectId('id'), validateUpdateOrder, orderController.updateOrder);

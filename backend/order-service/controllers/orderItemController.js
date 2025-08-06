@@ -20,7 +20,7 @@ exports.createOrderItem = async (req, res) => {
     const { foodId, quantity, note, orderId } = req.body;
     if (!orderId) return res.status(400).json({ error: 'orderId is required' });
     // Gọi API food-service để lấy thông tin food
-    const food = await ExternalService.getFoodById(foodId);
+    const food = await ExternalService.getFoodById(foodId, req.headers.authorization);
 
     if (!food) {
       return res.status(404).json({ error: 'Food not found' });
@@ -56,7 +56,7 @@ exports.createOrderItem = async (req, res) => {
 
     // Cập nhật quantity của food
     const newQuantity = food.quantity - quantity;
-    await ExternalService.updateFoodQuantity(foodId, newQuantity);
+    await ExternalService.updateFoodQuantity(foodId, newQuantity, req.headers.authorization);
     
     res.status(201).json({
       ...orderItem.toObject(),
@@ -118,10 +118,10 @@ exports.updateOrderItemStatus = async (req, res) => {
     // 2. Cập nhật lại quantity cho food item khi order item được trả về "Cancelled"
     if (status === 'Cancelled' && oldStatus !== 'Cancelled') {
       try {
-        const food = await ExternalService.getFoodById(orderItem.foodId);
+        const food = await ExternalService.getFoodById(orderItem.foodId, req.headers.authorization);
         if (food) {
           const newQuantity = food.quantity + orderItem.quantity;
-          await ExternalService.updateFoodQuantity(orderItem.foodId, newQuantity);
+          await ExternalService.updateFoodQuantity(orderItem.foodId, newQuantity, req.headers.authorization);
         }
       } catch (error) {
         console.error('Lỗi khi cập nhật lại số lượng món ăn:', error.message);

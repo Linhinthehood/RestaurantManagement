@@ -5,11 +5,11 @@ const Sidebar = () => {
     { label: "Dashboard", path: "/dashboard" },
     { label: "Table Management", path: "/dashboard/table-management" },
     { label: "Orders", path: "/dashboard/orders" },
+    { label: "Menu", path: "/dashboard/menu" },
     { label: "Kitchen", path: "/dashboard/kitchen" },
     { label: "Register User", path: "/dashboard/manager/register" },
     { label: "Inventory", path: "/dashboard/manager/inventory" },
     { label: "Reports", path: "/dashboard/manager/reports" },
-    { label: "Test Page", path: "/dashboard/test" },
   ];
   return (
     <div className="w-64 bg-gray-800 text-white h-full p-4">

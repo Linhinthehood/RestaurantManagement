@@ -6,6 +6,7 @@ import DashboardHome from "../pages/dashboard/DashboardHome";
 import TableManagementPage from "../pages/table-management/TableManagementPage";
 import OrderPage from "../pages/orders/OrderPage";
 import KitchenPage from "../pages/kitchen/KitchenPage";
+import MenuPage from "../pages/menu/MenuPage";
 import NotFoundPage from "../pages/not-found/NotFoundPage";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterUserPage from "../pages/manager/RegisterUserPage";
@@ -58,6 +59,7 @@ const AppRouter = () => {
         { path: "table-management", element: <TableManagementPage /> },
         { path: "orders", element: <OrderPage /> },
         { path: "kitchen", element: <KitchenPage /> },
+        { path: "menu", element: <MenuPage /> },
 
         // route này là cho manager nhé
         { path: "manager/register", element: <RegisterUserPage /> },

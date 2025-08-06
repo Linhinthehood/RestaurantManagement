@@ -107,9 +107,25 @@ exports.createOrder = async (req, res) => {
         validationErrors.push(`Reservation với ID ${reservationId} không tồn tại`);
       } else {
         console.log('Reservation found:', reservation);
+        
+        // Chuẩn hoá reservation data để kiểm tra status
+        let reservationData = null;
+        if (reservation.data && reservation.data.reservation) {
+          reservationData = reservation.data.reservation;
+        } else if (reservation.reservation) {
+          reservationData = reservation.reservation;
+        } else {
+          reservationData = reservation;
+        }
+        
+        // Kiểm tra status phải là "Arrived"
+        if (reservationData.status !== 'Arrived') {
+          validationErrors.push(`Reservation với ID ${reservationId} có trạng thái "${reservationData.status}", chỉ có thể tạo order cho reservation có trạng thái "Arrived"`);
+        }
+        
         // Nếu có reservation, lấy tableId từ reservation nếu không có tableId
-        if (!tableId && reservation.tableId) {
-          rest.tableId = reservation.tableId;
+        if (!tableId && reservationData.tableId) {
+          rest.tableId = reservationData.tableId;
         }
       }
     }
@@ -224,6 +240,53 @@ exports.getOrdersByReservationId = async (req, res) => {
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// Lấy danh sách reservations có status "Arrived" và chưa có order để tạo order
+exports.getArrivedReservations = async (req, res) => {
+  try {
+    // Lấy tất cả reservations có status "Arrived"
+    const arrivedReservations = await ExternalService.getArrivedReservations(req.headers.authorization);
+    
+    // Lấy danh sách order trạng thái Serving để kiểm tra
+    const servingOrders = await Order.find({ orderStatus: 'Serving' });
+    const servingReservationIds = servingOrders.map(order => order.reservationId.toString());
+    
+    // Phân loại reservations
+    const result = arrivedReservations.map(reservation => {
+      const hasServingOrder = servingReservationIds.includes(reservation._id.toString());
+      
+      if (hasServingOrder) {
+        // Reservation đã có order trạng thái Serving
+        const servingOrder = servingOrders.find(order => 
+          order.reservationId.toString() === reservation._id.toString()
+        );
+        return {
+          reservation: reservation,
+          order: servingOrder
+        };
+      } else {
+        // Reservation chưa có order
+        return {
+          reservation: reservation,
+          order: null
+        };
+      }
+    });
+    
+    res.json({
+      success: true,
+      message: 'Lấy danh sách arrived reservations thành công',
+      data: result
+    });
+  } catch (err) {
+    console.error('Error getting arrived reservations:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Lỗi khi lấy danh sách arrived reservations',
+      error: err.message 
+    });
   }
 };
 

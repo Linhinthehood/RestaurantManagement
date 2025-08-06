@@ -24,6 +24,11 @@ const proxyOptions = {
   onProxyReq: (proxyReq, req, res) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} -> ${proxyReq.path}`);
     
+    // Forward Authorization header
+    if (req.headers.authorization) {
+      proxyReq.setHeader('Authorization', req.headers.authorization);
+    }
+    
     // Log request headers
     console.log('Request Headers:', proxyReq.getHeaders());
     
@@ -67,6 +72,12 @@ app.use('/api/foods', createProxyMiddleware({
   ...proxyOptions,
   target: 'http://food-service:3003',
   pathRewrite: { '^/api/foods': '/api/foods' }
+}));
+
+app.use('/api/categories', createProxyMiddleware({ 
+  ...proxyOptions,
+  target: 'http://food-service:3003',
+  pathRewrite: { '^/api/categories': '/api/categories' }
 }));
 
 app.use('/api/orders', createProxyMiddleware({ 
