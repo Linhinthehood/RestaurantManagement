@@ -1,6 +1,6 @@
 import React from "react";
 
-const Alert = ({ type = "info", message, onClose }) => {
+const Alert = ({ type = "info", message, onClose, className = "" }) => {
   const alertClasses = {
     success: "bg-green-50 border-green-200 text-green-700",
     error: "bg-red-50 border-red-200 text-red-700",
@@ -39,7 +39,7 @@ const Alert = ({ type = "info", message, onClose }) => {
   };
 
   return (
-    <div className={`border rounded-lg p-4 ${alertClasses[type]} flex items-start space-x-3`}>
+    <div className={`border rounded-lg p-4 ${alertClasses[type]} flex items-start space-x-3 ${className}`}>
       <div className={`flex-shrink-0 ${iconClasses[type]}`}>
         {icons[type]}
       </div>

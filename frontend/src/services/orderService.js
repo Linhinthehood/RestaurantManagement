@@ -81,6 +81,68 @@ export const orderItemService = {
       console.error('Error creating order item:', error);
       throw error;
     }
+  },
+
+  // Get all order items for kitchen
+  getAllOrderItems: async () => {
+    try {
+      console.log('orderService - getAllOrderItems: Making API call');
+      const response = await orderAPI.get('/order-items');
+      console.log('orderService - getAllOrderItems: Response:', response);
+      console.log('orderService - getAllOrderItems: Response.data:', response.data);
+      console.log('orderService - getAllOrderItems: Response.data type:', typeof response.data);
+      console.log('orderService - getAllOrderItems: Response.data length:', Array.isArray(response.data) ? response.data.length : 'not array');
+      return response.data;
+    } catch (error) {
+      console.error('orderService - getAllOrderItems: Error:', error);
+      throw error;
+    }
+  },
+
+  // Get order item by ID
+  getOrderItemById: async (id) => {
+    try {
+      const response = await orderAPI.get(`/order-items/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching order item by id:', error);
+      throw error;
+    }
+  },
+
+  // Update order item status
+  updateOrderItemStatus: async (id, status) => {
+    try {
+      console.log('orderService - updateOrderItemStatus: Making API call with id:', id, 'status:', status);
+      const response = await orderAPI.patch(`/order-items/${id}/status`, { status });
+      console.log('orderService - updateOrderItemStatus: Response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('orderService - updateOrderItemStatus: Error:', error);
+      throw error;
+    }
+  },
+
+  // Update order item (note, quantity)
+  updateOrderItem: async (id, updateData) => {
+    try {
+      const response = await orderAPI.put(`/order-items/${id}`, updateData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating order item:', error);
+      throw error;
+    }
+  },
+
+  // Delete order item
+  deleteOrderItem: async (id) => {
+    try {
+      const response = await orderAPI.delete(`/order-items/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting order item:', error);
+      throw error;
+    }
   }
 };
 

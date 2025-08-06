@@ -70,8 +70,58 @@ exports.createOrderItem = async (req, res) => {
 // Lấy tất cả OrderItem
 exports.getAllOrderItems = async (req, res) => {
   try {
-    const orderItems = await OrderItem.find();
-    res.json(orderItems);
+    const orderItems = await OrderItem.find()
+      .populate('orderId', 'orderStatus totalPrice reservationId');
+    
+    // Fetch food and table information for each order item
+    const orderItemsWithDetails = await Promise.all(
+      orderItems.map(async (orderItem) => {
+        try {
+          // Fetch food information
+          const food = await ExternalService.getFoodById(orderItem.foodId, req.headers.authorization);
+          
+          // Fetch table information from reservation
+          let tableName = null;
+          if (orderItem.orderId && orderItem.orderId.reservationId) {
+            try {
+              const reservation = await ExternalService.getReservationById(orderItem.orderId.reservationId, req.headers.authorization);
+              let reservationData = null;
+              if (reservation) {
+                if (reservation.data && reservation.data.reservation) {
+                  reservationData = reservation.data.reservation;
+                } else if (reservation.reservation) {
+                  reservationData = reservation.reservation;
+                } else {
+                  reservationData = reservation;
+                }
+                
+                // Get table names from reservation
+                if (reservationData && Array.isArray(reservationData.tables)) {
+                  tableName = reservationData.tables.map(table => table.name || table.tableName).join(', ');
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching reservation for order item:', error);
+            }
+          }
+          
+          return {
+            ...orderItem.toObject(),
+            foodId: food || { _id: orderItem.foodId, name: 'Food not found' },
+            tableName: tableName || 'Unknown Table'
+          };
+        } catch (error) {
+          console.error('Error fetching details for order item:', error);
+          return {
+            ...orderItem.toObject(),
+            foodId: { _id: orderItem.foodId, name: 'Food not found' },
+            tableName: 'Unknown Table'
+          };
+        }
+      })
+    );
+    
+    res.json(orderItemsWithDetails);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -80,9 +130,55 @@ exports.getAllOrderItems = async (req, res) => {
 // Lấy OrderItem theo ID
 exports.getOrderItemById = async (req, res) => {
   try {
-    const orderItem = await OrderItem.findById(req.params.id);
+    const orderItem = await OrderItem.findById(req.params.id)
+      .populate('orderId', 'orderStatus totalPrice reservationId');
     if (!orderItem) return res.status(404).json({ error: 'OrderItem not found' });
-    res.json(orderItem);
+    
+    // Fetch food and table information
+    try {
+      // Fetch food information
+      const food = await ExternalService.getFoodById(orderItem.foodId, req.headers.authorization);
+      
+      // Fetch table information from reservation
+      let tableName = null;
+      if (orderItem.orderId && orderItem.orderId.reservationId) {
+        try {
+          const reservation = await ExternalService.getReservationById(orderItem.orderId.reservationId, req.headers.authorization);
+          let reservationData = null;
+          if (reservation) {
+            if (reservation.data && reservation.data.reservation) {
+              reservationData = reservation.data.reservation;
+            } else if (reservation.reservation) {
+              reservationData = reservation.reservation;
+            } else {
+              reservationData = reservation;
+            }
+            
+            // Get table names from reservation
+            if (reservationData && Array.isArray(reservationData.tables)) {
+              tableName = reservationData.tables.map(table => table.name || table.tableName).join(', ');
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching reservation for order item:', error);
+        }
+      }
+      
+      const orderItemWithDetails = {
+        ...orderItem.toObject(),
+        foodId: food || { _id: orderItem.foodId, name: 'Food not found' },
+        tableName: tableName || 'Unknown Table'
+      };
+      res.json(orderItemWithDetails);
+    } catch (error) {
+      console.error('Error fetching details for order item:', error);
+      const orderItemWithDetails = {
+        ...orderItem.toObject(),
+        foodId: { _id: orderItem.foodId, name: 'Food not found' },
+        tableName: 'Unknown Table'
+      };
+      res.json(orderItemWithDetails);
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -129,7 +225,59 @@ exports.updateOrderItemStatus = async (req, res) => {
       }
     }
 
-    res.json(orderItem);
+    // Fetch updated order item with food and table information
+    try {
+      const updatedOrderItem = await OrderItem.findById(orderItem._id)
+        .populate('orderId', 'orderStatus totalPrice reservationId');
+      
+      // Fetch food information
+      const food = await ExternalService.getFoodById(updatedOrderItem.foodId, req.headers.authorization);
+      
+      // Fetch table information from reservation
+      let tableName = null;
+      if (updatedOrderItem.orderId && updatedOrderItem.orderId.reservationId) {
+        try {
+          const reservation = await ExternalService.getReservationById(updatedOrderItem.orderId.reservationId, req.headers.authorization);
+          let reservationData = null;
+          if (reservation) {
+            if (reservation.data && reservation.data.reservation) {
+              reservationData = reservation.data.reservation;
+            } else if (reservation.reservation) {
+              reservationData = reservation.reservation;
+            } else {
+              reservationData = reservation;
+            }
+            
+            // Get table names from reservation
+            if (reservationData && Array.isArray(reservationData.tables)) {
+              tableName = reservationData.tables.map(table => table.name || table.tableName).join(', ');
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching reservation for updated order item:', error);
+        }
+      }
+      
+      const orderItemWithDetails = {
+        ...updatedOrderItem.toObject(),
+        foodId: food || { _id: updatedOrderItem.foodId, name: 'Food not found' },
+        tableName: tableName || 'Unknown Table'
+      };
+      
+      res.json(orderItemWithDetails);
+    } catch (error) {
+      console.error('Error fetching details for updated order item:', error);
+      const updatedOrderItem = await OrderItem.findById(orderItem._id)
+        .populate('orderId', 'orderStatus totalPrice reservationId');
+      
+      const orderItemWithDetails = {
+        ...updatedOrderItem.toObject(),
+        foodId: { _id: updatedOrderItem.foodId, name: 'Food not found' },
+        tableName: 'Unknown Table'
+      };
+      
+      res.json(orderItemWithDetails);
+    }
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
