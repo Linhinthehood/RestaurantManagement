@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
-// Tạo axios instance với config mặc định
+// Create axios instance with default config
 const orderAPI = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -10,14 +10,13 @@ const orderAPI = axios.create({
   },
 });
 
-// Interceptor để thêm token vào header (tạm thời bỏ qua)
+// Interceptor to add token to header
 orderAPI.interceptors.request.use(
   (config) => {
-    // Tạm thời bỏ qua authentication để test
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -25,55 +24,32 @@ orderAPI.interceptors.request.use(
   }
 );
 
-// Interceptor để xử lý response (tạm thời bỏ qua)
+// Interceptor to handle response
 orderAPI.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Tạm thời bỏ qua redirect login
-    // if (error.response?.status === 401) {
-    //   localStorage.removeItem('token');
-    //   window.location.href = '/login';
-    // }
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );
 
-// Order APIs
+// Order Service - Simplified
 export const orderService = {
-  // Lấy tất cả orders
-  getAllOrders: async () => {
+  // Get list of arrived reservations with serving orders (if any)
+  getArrivedAndServingReservations: async () => {
     try {
-      const response = await orderAPI.get('/orders');
+      const response = await orderAPI.get('/orders/arrived-reservations');
       return response.data;
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('Error fetching arrived/serving reservations:', error);
       throw error;
     }
   },
 
-  // Lấy order theo ID
-  getOrderById: async (orderId) => {
-    try {
-      const response = await orderAPI.get(`/orders/${orderId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching order:', error);
-      throw error;
-    }
-  },
-
-  // Lấy orders theo reservation ID
-  getOrdersByReservationId: async (reservationId) => {
-    try {
-      const response = await orderAPI.get(`/orders/by-reservation/${reservationId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching orders by reservation:', error);
-      throw error;
-    }
-  },
-
-  // Tạo order mới
+  // Create new order
   createOrder: async (orderData) => {
     try {
       const response = await orderAPI.post('/orders', orderData);
@@ -84,68 +60,22 @@ export const orderService = {
     }
   },
 
-  // Cập nhật order
-  updateOrder: async (orderId, orderData) => {
+  getOrderById: async (orderId) => {
     try {
-      const response = await orderAPI.put(`/orders/${orderId}`, orderData);
+      const response = await orderAPI.get(`/orders/${orderId}`);
       return response.data;
     } catch (error) {
-      console.error('Error updating order:', error);
-      throw error;
-    }
-  },
-
-  // Cập nhật trạng thái order
-  updateOrderStatus: async (orderId, status) => {
-    try {
-      const response = await orderAPI.patch(`/orders/${orderId}/status`, { orderStatus: status });
-      return response.data;
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      throw error;
-    }
-  },
-
-  // Xóa order
-  deleteOrder: async (orderId) => {
-    try {
-      const response = await orderAPI.delete(`/orders/${orderId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting order:', error);
+      console.error('Error fetching order by id:', error);
       throw error;
     }
   },
 };
 
-// Order Item APIs
+// Order Item Service
 export const orderItemService = {
-  // Lấy tất cả order items
-  getAllOrderItems: async () => {
+  createOrderItem: async ({ orderId, foodId, quantity, note }) => {
     try {
-      const response = await orderAPI.get('/order-items');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching order items:', error);
-      throw error;
-    }
-  },
-
-  // Lấy order item theo ID
-  getOrderItemById: async (orderItemId) => {
-    try {
-      const response = await orderAPI.get(`/order-items/${orderItemId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching order item:', error);
-      throw error;
-    }
-  },
-
-  // Tạo order item mới
-  createOrderItem: async (orderItemData) => {
-    try {
-      const response = await orderAPI.post('/order-items', orderItemData);
+      const response = await orderAPI.post('/order-items', { orderId, foodId, quantity, note });
       return response.data;
     } catch (error) {
       console.error('Error creating order item:', error);
@@ -153,10 +83,50 @@ export const orderItemService = {
     }
   },
 
-  // Cập nhật order item
-  updateOrderItem: async (orderItemId, orderItemData) => {
+  // Get all order items for kitchen
+  getAllOrderItems: async () => {
     try {
-      const response = await orderAPI.put(`/order-items/${orderItemId}`, orderItemData);
+      console.log('orderService - getAllOrderItems: Making API call');
+      const response = await orderAPI.get('/order-items');
+      console.log('orderService - getAllOrderItems: Response:', response);
+      console.log('orderService - getAllOrderItems: Response.data:', response.data);
+      console.log('orderService - getAllOrderItems: Response.data type:', typeof response.data);
+      console.log('orderService - getAllOrderItems: Response.data length:', Array.isArray(response.data) ? response.data.length : 'not array');
+      return response.data;
+    } catch (error) {
+      console.error('orderService - getAllOrderItems: Error:', error);
+      throw error;
+    }
+  },
+
+  // Get order item by ID
+  getOrderItemById: async (id) => {
+    try {
+      const response = await orderAPI.get(`/order-items/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching order item by id:', error);
+      throw error;
+    }
+  },
+
+  // Update order item status
+  updateOrderItemStatus: async (id, status) => {
+    try {
+      console.log('orderService - updateOrderItemStatus: Making API call with id:', id, 'status:', status);
+      const response = await orderAPI.patch(`/order-items/${id}/status`, { status });
+      console.log('orderService - updateOrderItemStatus: Response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('orderService - updateOrderItemStatus: Error:', error);
+      throw error;
+    }
+  },
+
+  // Update order item (note, quantity)
+  updateOrderItem: async (id, updateData) => {
+    try {
+      const response = await orderAPI.put(`/order-items/${id}`, updateData);
       return response.data;
     } catch (error) {
       console.error('Error updating order item:', error);
@@ -164,27 +134,16 @@ export const orderItemService = {
     }
   },
 
-  // Cập nhật trạng thái order item
-  updateOrderItemStatus: async (orderItemId, status) => {
+  // Delete order item
+  deleteOrderItem: async (id) => {
     try {
-      const response = await orderAPI.patch(`/order-items/${orderItemId}/status`, { status });
-      return response.data;
-    } catch (error) {
-      console.error('Error updating order item status:', error);
-      throw error;
-    }
-  },
-
-  // Xóa order item
-  deleteOrderItem: async (orderItemId) => {
-    try {
-      const response = await orderAPI.delete(`/order-items/${orderItemId}`);
+      const response = await orderAPI.delete(`/order-items/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error deleting order item:', error);
       throw error;
     }
-  },
+  }
 };
 
 export default orderService;

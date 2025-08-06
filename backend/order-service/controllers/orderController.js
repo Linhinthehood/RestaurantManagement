@@ -5,11 +5,10 @@ const ExternalService = require('../services/externalService');
 async function enrichOrder(order, orderItems = [], req) {
   try {
     console.log('Enriching order:', order._id);
-    console.log('Order tableId:', order.tableId);
     console.log('Order userId:', order.userId);
     console.log('Order reservationId:', order.reservationId);
     
-    // Lấy thông tin table (có thể là 1 hoặc nhiều)
+    // Lấy thông tin table từ reservation (có thể là 1 hoặc nhiều)
     let tables = [];
     if (order.reservationId) {
       // Gọi sang reservation-service lấy reservation, lấy trường tables
@@ -27,9 +26,6 @@ async function enrichOrder(order, orderItems = [], req) {
           tables = reservationData.tables;
         }
       }
-    } else if (order.tableId) {
-      const table = await ExternalService.getTableById(order.tableId, req.headers.authorization);
-      if (table) tables = [{ _id: table._id, name: table.name }];
     }
 
     // Lấy thông tin user
@@ -95,7 +91,7 @@ async function enrichOrder(order, orderItems = [], req) {
 // Tạo mới Order
 exports.createOrder = async (req, res) => {
   try {
-    const { orderItemId = [], tableId, reservationId, userId, ...rest } = req.body;
+    const { orderItemId = [], reservationId, userId, ...rest } = req.body;
     
     // Kiểm tra và validate các ID trước khi tạo order
     const validationErrors = [];
@@ -107,10 +103,23 @@ exports.createOrder = async (req, res) => {
         validationErrors.push(`Reservation với ID ${reservationId} không tồn tại`);
       } else {
         console.log('Reservation found:', reservation);
-        // Nếu có reservation, lấy tableId từ reservation nếu không có tableId
-        if (!tableId && reservation.tableId) {
-          rest.tableId = reservation.tableId;
+        
+        // Chuẩn hoá reservation data để kiểm tra status
+        let reservationData = null;
+        if (reservation.data && reservation.data.reservation) {
+          reservationData = reservation.data.reservation;
+        } else if (reservation.reservation) {
+          reservationData = reservation.reservation;
+        } else {
+          reservationData = reservation;
         }
+        
+        // Kiểm tra status phải là "Arrived"
+        if (reservationData.status !== 'Arrived') {
+          validationErrors.push(`Reservation với ID ${reservationId} có trạng thái "${reservationData.status}", chỉ có thể tạo order cho reservation có trạng thái "Arrived"`);
+        }
+        
+
       }
     }
     
@@ -124,15 +133,7 @@ exports.createOrder = async (req, res) => {
       }
     }
     
-    // 3. Kiểm tra tableId nếu có
-    if (tableId) {
-      const table = await ExternalService.getTableById(tableId, req.headers.authorization);
-      if (!table) {
-        validationErrors.push(`Table với ID ${tableId} không tồn tại`);
-      } else {
-        console.log('Table found:', table);
-      }
-    }
+
     
     // 4. Kiểm tra orderItemId nếu có
     if (orderItemId && orderItemId.length > 0) {
@@ -159,10 +160,9 @@ exports.createOrder = async (req, res) => {
     // Tạo order mới
     const order = new Order({
       ...rest,
-      tableId: rest.tableId || tableId,
       orderItemId,
-      userId, // thêm dòng này
-      reservationId, // thêm dòng này
+      userId,
+      reservationId,
       totalPrice: 0, // Giá ban đầu luôn là 0
       orderStatus: 'Serving',
       orderStatusHistory: [{ status: 'Serving', changedAt: new Date() }]
@@ -209,7 +209,21 @@ exports.getOrderById = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
     const items = await OrderItem.find({ _id: { $in: order.orderItemId } });
-    res.json(await enrichOrder(order, items, req));
+    // Enrich orderItems with food name
+    const enrichedItems = await Promise.all(items.map(async (item) => {
+      const obj = item.toObject();
+      if (obj.foodId) {
+        // Lấy tên món từ food-service nếu cần, hoặc populate nếu đã có
+        try {
+          const food = await require('../services/externalService').getFoodById(obj.foodId, req.headers.authorization);
+          obj.foodName = food?.name || 'Unknown Food';
+        } catch {
+          obj.foodName = 'Unknown Food';
+        }
+      }
+      return obj;
+    }));
+    res.json({ ...(await enrichOrder(order, items, req)), orderItems: enrichedItems });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -224,6 +238,53 @@ exports.getOrdersByReservationId = async (req, res) => {
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// Lấy danh sách reservations có status "Arrived" và chưa có order để tạo order
+exports.getArrivedReservations = async (req, res) => {
+  try {
+    // Lấy tất cả reservations có status "Arrived"
+    const arrivedReservations = await ExternalService.getArrivedReservations(req.headers.authorization);
+    
+    // Lấy danh sách order trạng thái Serving để kiểm tra
+    const servingOrders = await Order.find({ orderStatus: 'Serving' });
+    const servingReservationIds = servingOrders.map(order => order.reservationId.toString());
+    
+    // Phân loại reservations
+    const result = arrivedReservations.map(reservation => {
+      const hasServingOrder = servingReservationIds.includes(reservation._id.toString());
+      
+      if (hasServingOrder) {
+        // Reservation đã có order trạng thái Serving
+        const servingOrder = servingOrders.find(order => 
+          order.reservationId.toString() === reservation._id.toString()
+        );
+        return {
+          reservation: reservation,
+          order: servingOrder
+        };
+      } else {
+        // Reservation chưa có order
+        return {
+          reservation: reservation,
+          order: null
+        };
+      }
+    });
+    
+    res.json({
+      success: true,
+      message: 'Lấy danh sách arrived reservations thành công',
+      data: result
+    });
+  } catch (err) {
+    console.error('Error getting arrived reservations:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Lỗi khi lấy danh sách arrived reservations',
+      error: err.message 
+    });
   }
 };
 

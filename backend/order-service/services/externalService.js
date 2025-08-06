@@ -83,9 +83,13 @@ class ExternalService {
   }
 
   // Lấy thông tin food từ food-service
-  static async getFoodById(foodId) {
+  static async getFoodById(foodId, token) {
     try {
-      const response = await axios.get(`${FOOD_SERVICE_URL}/api/foods/${foodId}`);
+      const response = await axios.get(`${FOOD_SERVICE_URL}/api/foods/${foodId}`, {
+        headers: {
+          Authorization: token
+        }
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching food:', error.message);
@@ -94,9 +98,13 @@ class ExternalService {
   }
 
   // Cập nhật quantity của food
-  static async updateFoodQuantity(foodId, quantity) {
+  static async updateFoodQuantity(foodId, quantity, token) {
     try {
-      const response = await axios.put(`${FOOD_SERVICE_URL}/api/foods/${foodId}`, { quantity });
+      const response = await axios.put(`${FOOD_SERVICE_URL}/api/foods/${foodId}`, { quantity }, {
+        headers: {
+          Authorization: token
+        }
+      });
       return response.data;
     } catch (error) {
       console.error('Error updating food quantity:', error.message);
@@ -105,9 +113,13 @@ class ExternalService {
   }
 
   // Lấy danh sách tất cả tables
-  static async getAllTables() {
+  static async getAllTables(token) {
     try {
-      const response = await axios.get(`${TABLE_SERVICE_URL}/api/v1/tables`);
+      const response = await axios.get(`${TABLE_SERVICE_URL}/api/v1/tables`, {
+        headers: {
+          Authorization: token
+        }
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching tables:', error.message);
@@ -116,9 +128,13 @@ class ExternalService {
   }
 
   // Lấy danh sách tất cả users
-  static async getAllUsers() {
+  static async getAllUsers(token) {
     try {
-      const response = await axios.get(`${USER_SERVICE_URL}/api/auth/users`);
+      const response = await axios.get(`${USER_SERVICE_URL}/api/auth/users`, {
+        headers: {
+          Authorization: token
+        }
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching users:', error.message);
@@ -127,12 +143,39 @@ class ExternalService {
   }
 
   // Lấy danh sách tất cả reservations
-  static async getAllReservations() {
+  static async getAllReservations(token) {
     try {
-      const response = await axios.get(`${RESERVATION_SERVICE_URL}/api/v1/reservations`);
+      const response = await axios.get(`${RESERVATION_SERVICE_URL}/api/v1/reservations`, {
+        headers: {
+          Authorization: token
+        }
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching reservations:', error.message);
+      return [];
+    }
+  }
+
+  // Lấy danh sách reservations có status "Arrived"
+  static async getArrivedReservations(token) {
+    try {
+      console.log(`Fetching arrived reservations from: ${RESERVATION_SERVICE_URL}/api/v1/reservations`);
+      const response = await axios.get(`${RESERVATION_SERVICE_URL}/api/v1/reservations`, {
+        headers: {
+          Authorization: token
+        }
+      });
+      
+      // Lọc ra các reservation có status "Arrived"
+      const allReservations = response.data.reservations || response.data || [];
+      const arrivedReservations = allReservations.filter(reservation => reservation.status === 'Arrived');
+      
+      console.log('Arrived reservations found:', arrivedReservations.length);
+      return arrivedReservations;
+    } catch (error) {
+      console.error('Error fetching arrived reservations:', error.message);
+      console.error('Full error:', error.response?.data || error);
       return [];
     }
   }

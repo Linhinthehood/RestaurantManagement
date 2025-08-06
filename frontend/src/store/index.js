@@ -3,6 +3,7 @@ import userSlice from './userSlice';
 import reservationSlice from './reservationSlice';
 import tableSlice from './tableSlice';
 import orderSlice from './orderSlice';
+import foodSlice from './foodSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     reservation: reservationSlice,
     table: tableSlice,
     order: orderSlice,
+    food: foodSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
