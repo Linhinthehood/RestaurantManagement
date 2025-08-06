@@ -79,9 +79,20 @@ const reservationService = {
     return reservation;
   },
 
-  getAllReservations: async () => {
+  getAllReservations: async ({ dateStr, timeStr }) => {
+    const filter = {};
+    if (dateStr) {
+      const date = new Date(dateStr);
+      const nextDay = new Date(date);
+      nextDay.setDate(date.getDate() + 1);
+      filter.checkInTime = {
+        $gte: date,
+        $lt: nextDay,
+      };
+    }
+
     const reservations = await reservationModel
-      .find()
+      .find(filter)
       .populate("customerId", "name phone email")
       .populate("tableHistory")
       .sort({ checkInTime: 1 });
@@ -115,9 +126,14 @@ const reservationService = {
         .map((th) => tableMap[th.tableId?.toString()])
         .filter(Boolean)
         .map((t) => ({ _id: t._id, name: t.name }));
+      const checkInDate = new Date(r.checkInTime);
+      const date = checkInDate.toISOString().split("T")[0];
+      const time = checkInDate.toTimeString().split(" ")[0].slice(0, 5);
       return {
         ...r.toObject(),
         tables,
+        dateStr: date,
+        timeStr: time,
       };
     });
     return result;
@@ -162,7 +178,6 @@ const reservationService = {
       }
     }
 
-    // Gắn thông tin tên bàn vào reservation
     const tables = reservation.tableHistory
       .map((th) => tableMap[th.tableId?.toString()])
       .filter(Boolean)
@@ -172,6 +187,7 @@ const reservationService = {
       ...reservation.toObject(),
       tables,
     };
+
     return result;
   },
 
@@ -273,6 +289,30 @@ const reservationService = {
     const history = await tableHistoryModel.create(historyData);
     reservation.tableHistory.push(history._id);
     reservation.tableId = tableId;
+    await reservation.save();
+    return reservation;
+  },
+
+  unassignTable: async (reservationId) => {
+    const reservation = await reservationModel.findById(reservationId);
+    if (!reservation) throw new Error("Reservation not found");
+
+    const activeHistory = await tableHistoryModel.findOneAndDelete({
+      reservationId,
+      tableStatus: { $in: ["Pending", "Available"] },
+    });
+
+    if (!activeHistory) {
+      console.log(
+        `[Unassign] No pending assignment for reservation ${reservationId}`
+      );
+      throw new Error("No active table assignment found");
+    }
+
+    reservation.tableHistory = reservation.tableHistory.filter(
+      (id) => id.toString() !== activeHistory._id.toString()
+    );
+
     await reservation.save();
     return reservation;
   },

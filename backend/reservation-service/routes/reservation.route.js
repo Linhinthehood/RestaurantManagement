@@ -16,12 +16,17 @@ route.post(
 );
 route.put(
   "/:id/assign-table",
-  protect,
+  // protect,
   validateAssignTable,
   reservationController.assignTable
 );
+route.put("/:id/unassign-table", reservationController.unassignTable);
 route.put("/:id/checkin", protect, reservationController.checkInReservation);
-route.get("/", protect, reservationController.getAllReservations);
+route.get(
+  "/",
+  //  protect,
+  reservationController.getAllReservations
+);
 route.get(
   "/available",
   // protect,

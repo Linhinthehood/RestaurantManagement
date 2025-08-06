@@ -66,6 +66,22 @@ const reservationController = {
     }
   },
 
+  unassignTable: async (req, res) => {
+    try {
+      const { id } = req.params;
+      await reservationService.unassignTable(id);
+      res
+        .status(200)
+        .json({ message: "Table unassigned successfully", success: true });
+    } catch (error) {
+      console.error("Error unassign table: ", error);
+      res.status(500).json({
+        message: "Internal server error",
+        success: false,
+      });
+    }
+  },
+
   checkInReservation: async (req, res) => {
     try {
       const { id } = req.params;
@@ -91,8 +107,11 @@ const reservationController = {
   },
 
   getAllReservations: async (req, res) => {
+    const { date } = req.query;
     try {
-      const reservations = await reservationService.getAllReservations();
+      const reservations = await reservationService.getAllReservations({
+        dateStr: date,
+      });
       res.status(200).json({
         message: "Reservations fetched successfully",
         reservations: reservations,
