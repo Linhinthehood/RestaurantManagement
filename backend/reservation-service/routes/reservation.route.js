@@ -16,14 +16,28 @@ route.post(
 );
 route.put(
   "/:id/assign-table",
-  protect,
+  // protect,
   validateAssignTable,
   reservationController.assignTable
 );
+route.put("/:id/unassign-table", reservationController.unassignTable);
 route.put("/:id/checkin", protect, reservationController.checkInReservation);
-route.get("/", protect, reservationController.getAllReservations);
-route.get("/available", protect, reservationController.getAvailableTables);
-route.get("/customer/:phone", protect, reservationMiddleware.validatePhoneNumber, reservationController.getReservationByPhone);
+route.get(
+  "/",
+  //  protect,
+  reservationController.getAllReservations
+);
+route.get(
+  "/available",
+  // protect,
+  reservationController.getAvailableTables
+);
+route.get(
+  "/customer/:phone",
+  protect,
+  reservationMiddleware.validatePhoneNumber,
+  reservationController.getReservationByPhone
+);
 route.get(
   "/:id/tables",
   protect,

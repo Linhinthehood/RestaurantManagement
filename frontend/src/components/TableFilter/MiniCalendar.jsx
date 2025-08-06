@@ -12,7 +12,7 @@ const MiniCalendar = ({ selectedDate, onSelectDate }) => {
         placeholder="Select day"
         allowClear={false}
         size="small"
-        bordered={false}
+        variant="borderless"
         className="bg-white shadow rounded px-2 py-1"
       />
     </div>

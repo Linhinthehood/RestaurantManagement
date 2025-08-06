@@ -1,20 +1,19 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import ReservationListItem from "./ReservationListItem";
 
-const ReservationList = ({ filterStatus }) => {
+const ReservationList = ({ selectedDate, selectedTime }) => {
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchReservations = async () => {
     setIsLoading(true);
     try {
-      const url =
-        filterStatus === "all"
-          ? "http://localhost:3002/api/v1/reservations"
-          : `http://localhost:3002/api/v1/reservations?status=${filterStatus}`;
-      const res = await axios.get(url);
-      console.log("Fetched reservations:", res.data.reservations);
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+      const formattedTime = selectedTime;
+      const res = await axios.get("http://localhost:3000/api/v1/reservations", {
+        params: { date: formattedDate, time: formattedTime },
+      });
       setReservations(res.data.reservations || []);
     } catch (error) {
       console.error("Failed to fetch reservations:", error);
@@ -25,23 +24,26 @@ const ReservationList = ({ filterStatus }) => {
 
   useEffect(() => {
     fetchReservations();
-  }, [filterStatus]);
+  }, [selectedDate, selectedTime]);
 
   return (
-    <div className="mt-4">
-      <h2 className="text-lg font-semibold mb-2">Reservations</h2>
+    <div>
+      <h2 className="text-xl font-bold mb-4 text-gray-800">
+        📋 Reservation List
+      </h2>
+
       {isLoading ? (
         <p className="text-gray-500">Loading reservations...</p>
       ) : reservations.length === 0 ? (
         <p className="text-gray-500">No reservations found.</p>
       ) : (
-        reservations.map((c) => (
-          <div key={c._id} className="border p-2 mb-2 rounded">
-            <div>{c.customerId.name}</div>
-            <div className="text-sm text-gray-400">{c.time}</div>
-            <div className="text-xs italic text-yellow-400">{c.status}</div>
-          </div>
-        ))
+        <div className="space-y-3">
+          {reservations.map((rsv) => (
+            <div key={rsv._id}>
+              <ReservationListItem key={rsv._id} rsv={rsv} />
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
