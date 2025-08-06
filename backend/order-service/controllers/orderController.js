@@ -5,11 +5,10 @@ const ExternalService = require('../services/externalService');
 async function enrichOrder(order, orderItems = [], req) {
   try {
     console.log('Enriching order:', order._id);
-    console.log('Order tableId:', order.tableId);
     console.log('Order userId:', order.userId);
     console.log('Order reservationId:', order.reservationId);
     
-    // Lấy thông tin table (có thể là 1 hoặc nhiều)
+    // Lấy thông tin table từ reservation (có thể là 1 hoặc nhiều)
     let tables = [];
     if (order.reservationId) {
       // Gọi sang reservation-service lấy reservation, lấy trường tables
@@ -27,9 +26,6 @@ async function enrichOrder(order, orderItems = [], req) {
           tables = reservationData.tables;
         }
       }
-    } else if (order.tableId) {
-      const table = await ExternalService.getTableById(order.tableId, req.headers.authorization);
-      if (table) tables = [{ _id: table._id, name: table.name }];
     }
 
     // Lấy thông tin user
@@ -95,7 +91,7 @@ async function enrichOrder(order, orderItems = [], req) {
 // Tạo mới Order
 exports.createOrder = async (req, res) => {
   try {
-    const { orderItemId = [], tableId, reservationId, userId, ...rest } = req.body;
+    const { orderItemId = [], reservationId, userId, ...rest } = req.body;
     
     // Kiểm tra và validate các ID trước khi tạo order
     const validationErrors = [];
@@ -123,10 +119,7 @@ exports.createOrder = async (req, res) => {
           validationErrors.push(`Reservation với ID ${reservationId} có trạng thái "${reservationData.status}", chỉ có thể tạo order cho reservation có trạng thái "Arrived"`);
         }
         
-        // Nếu có reservation, lấy tableId từ reservation nếu không có tableId
-        if (!tableId && reservationData.tableId) {
-          rest.tableId = reservationData.tableId;
-        }
+
       }
     }
     
@@ -140,15 +133,7 @@ exports.createOrder = async (req, res) => {
       }
     }
     
-    // 3. Kiểm tra tableId nếu có
-    if (tableId) {
-      const table = await ExternalService.getTableById(tableId, req.headers.authorization);
-      if (!table) {
-        validationErrors.push(`Table với ID ${tableId} không tồn tại`);
-      } else {
-        console.log('Table found:', table);
-      }
-    }
+
     
     // 4. Kiểm tra orderItemId nếu có
     if (orderItemId && orderItemId.length > 0) {
@@ -175,10 +160,9 @@ exports.createOrder = async (req, res) => {
     // Tạo order mới
     const order = new Order({
       ...rest,
-      tableId: rest.tableId || tableId,
       orderItemId,
-      userId, // thêm dòng này
-      reservationId, // thêm dòng này
+      userId,
+      reservationId,
       totalPrice: 0, // Giá ban đầu luôn là 0
       orderStatus: 'Serving',
       orderStatusHistory: [{ status: 'Serving', changedAt: new Date() }]
@@ -225,7 +209,21 @@ exports.getOrderById = async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
     const items = await OrderItem.find({ _id: { $in: order.orderItemId } });
-    res.json(await enrichOrder(order, items, req));
+    // Enrich orderItems with food name
+    const enrichedItems = await Promise.all(items.map(async (item) => {
+      const obj = item.toObject();
+      if (obj.foodId) {
+        // Lấy tên món từ food-service nếu cần, hoặc populate nếu đã có
+        try {
+          const food = await require('../services/externalService').getFoodById(obj.foodId, req.headers.authorization);
+          obj.foodName = food?.name || 'Unknown Food';
+        } catch {
+          obj.foodName = 'Unknown Food';
+        }
+      }
+      return obj;
+    }));
+    res.json({ ...(await enrichOrder(order, items, req)), orderItems: enrichedItems });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

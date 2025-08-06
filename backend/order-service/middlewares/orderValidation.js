@@ -82,14 +82,14 @@ const forbidStatusRollback = async (req, res, next) => {
   next();
 };
 
-// Validate không cho phép tạo order nếu bàn đang có order trạng thái Serving
-const forbidCreateOrderIfTableServing = async (req, res, next) => {
-  const { tableId } = req.body;
-  // Chỉ kiểm tra nếu có tableId
-  if (!tableId || tableId === null || tableId === undefined) return next();
-  const servingOrder = await Order.findOne({ tableId, orderStatus: 'Serving' });
+// Validate không cho phép tạo order nếu reservation đang có order trạng thái Serving
+const forbidCreateOrderIfReservationServing = async (req, res, next) => {
+  const { reservationId } = req.body;
+  // Chỉ kiểm tra nếu có reservationId
+  if (!reservationId || reservationId === null || reservationId === undefined) return next();
+  const servingOrder = await Order.findOne({ reservationId, orderStatus: 'Serving' });
   if (servingOrder) {
-    return res.status(400).json({ error: 'Bàn này đang có order chưa hoàn thành' });
+    return res.status(400).json({ error: 'Reservation này đang có order chưa hoàn thành' });
   }
   next();
 };
@@ -160,7 +160,7 @@ const validateCreateOrder = [
   validateOrderItemIds,
   validateOrderStatus,
   validateReservationStatusForOrder,
-  forbidCreateOrderIfTableServing
+  forbidCreateOrderIfReservationServing
 ];
 
 // Validate tổng hợp khi update order
@@ -187,7 +187,7 @@ module.exports = {
   forbidStatusInPut,
   forbidDeleteCompletedOrder,
   forbidStatusRollback,
-  forbidCreateOrderIfTableServing,
+  forbidCreateOrderIfReservationServing,
   validateReservationStatusForOrder,
   validateCreateOrder,
   validateUpdateOrder,

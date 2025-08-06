@@ -7,8 +7,8 @@ import {
   setSelectedCategory,
   clearSelectedCategory
 } from "../../store/foodSlice";
-import { orderItemService } from "../../services/orderService";
-import { AlertCircle, Loader2, Plus, Minus } from "lucide-react";
+import { orderService, orderItemService } from "../../services/orderService";
+import { AlertCircle, Loader2, Plus, Minus, ShoppingCart, X } from "lucide-react";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -18,6 +18,10 @@ const MenuPage = () => {
   const dispatch = useDispatch();
   const { foods, categories, loading, error, selectedCategory } = useSelector((state) => state.food);
   const [quantityMap, setQuantityMap] = useState({});
+  const [noteMap, setNoteMap] = useState({});
+  const [orderItems, setOrderItems] = useState([]);
+  const [showOrderItems, setShowOrderItems] = useState(false);
+  const [loadingOrderItems, setLoadingOrderItems] = useState(false);
   const query = useQuery();
   const orderId = query.get('orderId');
   const reservationId = query.get('reservationId');
@@ -34,6 +38,27 @@ const MenuPage = () => {
       return () => clearTimeout(timer);
     }
   }, [error, dispatch]);
+
+  // Fetch order items when orderId changes
+  useEffect(() => {
+    if (orderId) {
+      fetchOrderItems();
+    }
+  }, [orderId]);
+
+  const fetchOrderItems = async () => {
+    if (!orderId) return;
+    
+    setLoadingOrderItems(true);
+    try {
+      const response = await orderService.getOrderById(orderId);
+      setOrderItems(response.orderItems || []);
+    } catch (err) {
+      console.error('Failed to fetch order items:', err);
+    } finally {
+      setLoadingOrderItems(false);
+    }
+  };
 
   // Group foods by category
   const groupedFoods = categories.map(category => ({
@@ -65,6 +90,12 @@ const MenuPage = () => {
   const increaseQuantity = (foodId) => setQuantity(foodId, getQuantity(foodId) + 1);
   const decreaseQuantity = (foodId) => setQuantity(foodId, getQuantity(foodId) - 1);
 
+  // Note handlers
+  const getNote = (foodId) => noteMap[foodId] || '';
+  const setNote = (foodId, value) => {
+    setNoteMap(prev => ({ ...prev, [foodId]: value }));
+  };
+
   const handleAdd = async (food) => {
     if (!orderId) {
       alert('No order selected!');
@@ -74,11 +105,31 @@ const MenuPage = () => {
       await orderItemService.createOrderItem({
         orderId,
         foodId: food._id,
-        quantity: getQuantity(food._id)
+        quantity: getQuantity(food._id),
+        note: getNote(food._id)
       });
+      
+      // Reset quantity and note for this food
+      setQuantity(food._id, 1);
+      setNote(food._id, '');
+      
+      // Refresh order items
+      await fetchOrderItems();
+      
       alert('Order item added successfully!');
     } catch (err) {
       alert('Failed to add order item!');
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Pending': return 'bg-yellow-100 text-yellow-800';
+      case 'Preparing': return 'bg-blue-100 text-blue-800';
+      case 'Ready_to_serve': return 'bg-orange-100 text-orange-800';
+      case 'Served': return 'bg-green-100 text-green-800';
+      case 'Cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -86,7 +137,7 @@ const MenuPage = () => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Category filter bar */}
       <div className="w-full bg-white border-b px-6 py-4 sticky top-0 z-10">
-        <div className="flex flex-wrap gap-2 overflow-x-auto">
+        <div className="flex flex-wrap gap-2 overflow-x-auto items-center">
           <button
             onClick={() => dispatch(clearSelectedCategory())}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -108,8 +159,71 @@ const MenuPage = () => {
               {category.name}
             </button>
           ))}
+          
+          {/* Order Items Button */}
+          {orderId && (
+            <button
+              onClick={() => setShowOrderItems(!showOrderItems)}
+              className="ml-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 transition-colors"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              {loadingOrderItems ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                `Order Items (${orderItems.length})`
+              )}
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Order Items Modal */}
+      {showOrderItems && orderId && (
+        <div className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-[90vh] rounded-lg shadow-lg bg-white border border-gray-200 overflow-y-auto">
+          <button
+            onClick={() => setShowOrderItems(false)}
+            className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div className="p-6 border-b">
+            <h2 className="text-xl font-bold">Order Items</h2>
+          </div>
+          <div className="p-6">
+            {loadingOrderItems ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <span className="ml-2">Loading order items...</span>
+              </div>
+            ) : orderItems.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No items in this order yet
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orderItems.map((item) => (
+                  <div key={item._id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold">{item.foodName || item.foodId?.name || item.food?.name || 'Unknown Food'}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                        {item.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600 mb-2">
+                      Quantity: {item.quantity} × {formatPrice(item.price?.$numberDecimal ? Number(item.price.$numberDecimal) : item.price / item.quantity)} = {formatPrice(item.price?.$numberDecimal ? Number(item.price.$numberDecimal) : item.price)}
+                    </div>
+                    {item.note && (
+                      <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                        <span className="font-medium">Note:</span> {item.note}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 p-8 overflow-y-auto">
@@ -159,6 +273,21 @@ const MenuPage = () => {
                         <div className="flex-1 flex flex-col p-4">
                           <h3 className="font-semibold text-gray-900 mb-1">{food.name}</h3>
                           {food.description && <p className="text-sm text-gray-600 mb-2 line-clamp-2">{food.description}</p>}
+                          
+                          {/* Note Input */}
+                          <div className="mb-3">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Note (optional)
+                            </label>
+                            <textarea
+                              value={getNote(food._id)}
+                              onChange={(e) => setNote(food._id, e.target.value)}
+                              placeholder="Add special instructions..."
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                              rows="2"
+                            />
+                          </div>
+                          
                           <div className="mt-auto flex items-center justify-between gap-2">
                             <span className="text-lg font-bold text-blue-600">{formatPrice(food.price)}</span>
                             <div className="flex items-center gap-1">

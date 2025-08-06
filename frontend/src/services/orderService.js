@@ -58,14 +58,24 @@ export const orderService = {
       console.error('Error creating order:', error);
       throw error;
     }
-  }
+  },
+
+  getOrderById: async (orderId) => {
+    try {
+      const response = await orderAPI.get(`/orders/${orderId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching order by id:', error);
+      throw error;
+    }
+  },
 };
 
 // Order Item Service
 export const orderItemService = {
-  createOrderItem: async ({ orderId, foodId, quantity }) => {
+  createOrderItem: async ({ orderId, foodId, quantity, note }) => {
     try {
-      const response = await orderAPI.post('/order-items', { orderId, foodId, quantity });
+      const response = await orderAPI.post('/order-items', { orderId, foodId, quantity, note });
       return response.data;
     } catch (error) {
       console.error('Error creating order item:', error);
