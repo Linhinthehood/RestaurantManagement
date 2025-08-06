@@ -2,13 +2,14 @@ import { NavLink } from "react-router-dom";
 
 const Sidebar = () => {
   const menuItems = [
-    { label: "Dashboard", path: "/" },
-    { label: "Table Management", path: "/table-management" },
-    { label: "Orders", path: "/orders" },
-    { label: "Kitchen", path: "/kitchen" },
-    { label: "Register User", path: "/manager/register" },
-    { label: "Inventory", path: "/manager/inventory" },
-    { label: "Reports", path: "/manager/reports" },
+    { label: "Dashboard", path: "/dashboard" },
+    { label: "Table Management", path: "/dashboard/table-management" },
+    { label: "Orders", path: "/dashboard/orders" },
+    { label: "Kitchen", path: "/dashboard/kitchen" },
+    { label: "Register User", path: "/dashboard/manager/register" },
+    { label: "Inventory", path: "/dashboard/manager/inventory" },
+    { label: "Reports", path: "/dashboard/manager/reports" },
+    { label: "Test Page", path: "/dashboard/test" },
   ];
   return (
     <div className="w-64 bg-gray-800 text-white h-full p-4">
