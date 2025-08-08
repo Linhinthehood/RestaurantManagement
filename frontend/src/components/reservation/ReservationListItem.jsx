@@ -4,7 +4,7 @@ import { UserIcon, ClockIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { Button } from "antd";
 import axios from "axios";
 
-const ReservationListItem = ({ rsv }) => {
+const ReservationListItem = ({ rsv, onUnassigned }) => {
   const [{ isDragging }, dragRef] = useDrag(() => ({
     type: "reservation",
     item: { id: rsv._id },
@@ -17,7 +17,7 @@ const ReservationListItem = ({ rsv }) => {
       await axios.put(
         `http://localhost:3000/api/v1/reservations/${rsv._id}/unassign-table`
       );
-      window.location.reload();
+      onUnassigned();
     } catch (error) {
       console.error("Failed to unassign table: ", error);
     }

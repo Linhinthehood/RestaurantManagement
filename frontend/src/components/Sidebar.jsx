@@ -1,16 +1,12 @@
 import { NavLink } from "react-router-dom";
+import { roleConfig } from "../config/roleConfig";
+import { useSelector } from "react-redux";
 
 const Sidebar = () => {
-  const menuItems = [
-    { label: "Dashboard", path: "/dashboard" },
-    { label: "Table Management", path: "/dashboard/table-management" },
-    { label: "Orders", path: "/dashboard/orders" },
-    { label: "Menu", path: "/dashboard/menu" },
-    { label: "Kitchen", path: "/dashboard/kitchen" },
-    { label: "Register User", path: "/dashboard/manager/register" },
-    { label: "Inventory", path: "/dashboard/manager/inventory" },
-    { label: "Reports", path: "/dashboard/manager/reports" },
-  ];
+  const { user } = useSelector((state) => state.user);
+  const role = user?.role?.toLowerCase();
+  const menuItems = roleConfig[role] || [];
+
   return (
     <div className="w-64 bg-gray-800 text-white h-full p-4">
       <h2 className="text-xl font-bold mb-6">Restaurant System</h2>
