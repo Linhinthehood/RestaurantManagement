@@ -1,9 +1,9 @@
 import React from 'react';
 
 const KitchenDashboard = ({ orderItems, selectedStatus, onStatusFilterChange }) => {
-  // Calculate statistics
+  // Calculate statistics (exclude Served and Cancelled items)
   const stats = {
-    total: orderItems.length,
+    total: orderItems.filter(item => item.status !== 'Served' && item.status !== 'Cancelled').length,
     pending: orderItems.filter(item => item.status === 'Pending').length,
     preparing: orderItems.filter(item => item.status === 'Preparing').length,
     ready: orderItems.filter(item => item.status === 'Ready_to_serve').length,
@@ -13,12 +13,12 @@ const KitchenDashboard = ({ orderItems, selectedStatus, onStatusFilterChange }) 
 
   // Status options for filter
   const statusOptions = [
-    { value: 'all', label: 'Tất cả' },
-    { value: 'Pending', label: 'Chờ xử lý' },
-    { value: 'Preparing', label: 'Đang chế biến' },
-    { value: 'Ready_to_serve', label: 'Sẵn sàng phục vụ' },
-    { value: 'Served', label: 'Đã phục vụ' },
-    { value: 'Cancelled', label: 'Đã hủy' }
+    { value: 'all', label: 'All' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Preparing', label: 'Preparing' },
+    { value: 'Ready_to_serve', label: 'Ready to Serve' },
+    { value: 'Served', label: 'Served' },
+    { value: 'Cancelled', label: 'Cancelled' }
   ];
 
   return (
@@ -26,13 +26,13 @@ const KitchenDashboard = ({ orderItems, selectedStatus, onStatusFilterChange }) 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Kitchen Dashboard</h2>
-          <p className="text-gray-600">Quản lý đơn hàng trong bếp</p>
+          <p className="text-gray-600">Manage orders in the kitchen</p>
         </div>
         
         {/* Status Filter */}
         <div className="mt-4 lg:mt-0">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Lọc theo trạng thái:
+            Filter by status:
           </label>
           <select
             value={selectedStatus}
@@ -52,32 +52,32 @@ const KitchenDashboard = ({ orderItems, selectedStatus, onStatusFilterChange }) 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-          <div className="text-sm text-blue-700">Tổng cộng</div>
+          <div className="text-sm text-blue-700">Total</div>
         </div>
         
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-          <div className="text-sm text-yellow-700">Chờ xử lý</div>
+          <div className="text-sm text-yellow-700">Pending</div>
         </div>
         
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">{stats.preparing}</div>
-          <div className="text-sm text-blue-700">Đang chế biến</div>
+          <div className="text-sm text-blue-700">Preparing</div>
         </div>
         
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-green-600">{stats.ready}</div>
-          <div className="text-sm text-green-700">Sẵn sàng</div>
+          <div className="text-sm text-green-700">Ready</div>
         </div>
         
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-gray-600">{stats.served}</div>
-          <div className="text-sm text-gray-700">Đã phục vụ</div>
+          <div className="text-sm text-gray-700">Served</div>
         </div>
         
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-red-600">{stats.cancelled}</div>
-          <div className="text-sm text-red-700">Đã hủy</div>
+          <div className="text-sm text-red-700">Cancelled</div>
         </div>
       </div>
 
@@ -93,10 +93,10 @@ const KitchenDashboard = ({ orderItems, selectedStatus, onStatusFilterChange }) 
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-yellow-800">
-                  Có {stats.pending} đơn hàng đang chờ xử lý
+                  {stats.pending} orders are pending
                 </h3>
                 <div className="mt-2 text-sm text-yellow-700">
-                  <p>Vui lòng xử lý các đơn hàng này càng sớm càng tốt.</p>
+                  <p>Please process these orders as soon as possible.</p>
                 </div>
               </div>
             </div>
@@ -113,10 +113,10 @@ const KitchenDashboard = ({ orderItems, selectedStatus, onStatusFilterChange }) 
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-green-800">
-                  Có {stats.ready} món ăn sẵn sàng phục vụ
+                  {stats.ready} dishes are ready to serve
                 </h3>
                 <div className="mt-2 text-sm text-green-700">
-                  <p>Các món ăn này đã sẵn sàng để phục vụ khách hàng.</p>
+                  <p>These dishes are ready to be served to customers.</p>
                 </div>
               </div>
             </div>

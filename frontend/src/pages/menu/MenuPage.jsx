@@ -76,10 +76,10 @@ const MenuPage = () => {
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
+    return new Intl.NumberFormat('vi-VN', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(price) + 'đ';
   };
 
   // Quantity handlers
@@ -118,7 +118,20 @@ const MenuPage = () => {
       
       alert('Order item added successfully!');
     } catch (err) {
-      alert('Failed to add order item!');
+      // Display specific error message from backend
+      const errorMessage = err.message || 'Failed to add order item!';
+      alert(errorMessage);
+    }
+  };
+
+  const handleMarkAsServed = async (orderItemId) => {
+    try {
+      await orderItemService.updateOrderItemStatus(orderItemId, 'Served');
+      // Refresh order items
+      await fetchOrderItems();
+      alert('Order item marked as served successfully!');
+    } catch (err) {
+      alert('Failed to mark order item as served!');
     }
   };
 
@@ -205,9 +218,22 @@ const MenuPage = () => {
                   <div key={item._id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold">{item.foodName || item.foodId?.name || item.food?.name || 'Unknown Food'}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-                        {item.status.replace('_', ' ')}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                          {item.status.replace('_', ' ')}
+                        </span>
+                        {item.status === 'Ready_to_serve' && (
+                          <button
+                            onClick={() => handleMarkAsServed(item._id)}
+                            className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-full transition-colors"
+                            title="Mark as Served"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="text-sm text-gray-600 mb-2">
                       Quantity: {item.quantity} × {formatPrice(item.price?.$numberDecimal ? Number(item.price.$numberDecimal) : item.price / item.quantity)} = {formatPrice(item.price?.$numberDecimal ? Number(item.price.$numberDecimal) : item.price)}

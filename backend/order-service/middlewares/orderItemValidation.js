@@ -40,6 +40,35 @@ const validateQuantity = (req, res, next) => {
   next();
 };
 
+// Kiểm tra quantity không vượt quá số lượng còn lại của food
+const validateFoodQuantity = async (req, res, next) => {
+  const { foodId, quantity } = req.body;
+  if (!foodId || !quantity) {
+    return next();
+  }
+  
+  try {
+    // Use existing external service instead of creating new one
+    const ExternalService = require('../services/externalService');
+    const token = req.headers.authorization;
+    const food = await ExternalService.getFoodById(foodId, token);
+    
+    if (!food) {
+      return res.status(404).json({ error: 'Food không tồn tại' });
+    }
+    
+    if (food.quantity < quantity) {
+      return res.status(400).json({ 
+        error: `Món ${food.name} chỉ còn tối đa ${food.quantity} phần` 
+      });
+    }
+    
+    next();
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi khi kiểm tra số lượng food' });
+  }
+};
+
 // Kiểm tra status
 const validateStatus = (req, res, next) => {
   const { status } = req.body;
@@ -67,6 +96,7 @@ const validateCreateOrderItem = [
   validateObjectId('orderId'),
   validateOrderIsServing,
   validateQuantity,
+  validateFoodQuantity,
   validateStatus
 ];
 
@@ -81,6 +111,7 @@ const validateDeleteOrderItem = [];
 module.exports = {
   validateObjectId,
   validateQuantity,
+  validateFoodQuantity,
   validateStatus,
   forbidStatusRollback,
   validateCreateOrderItem,

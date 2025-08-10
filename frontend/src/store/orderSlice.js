@@ -33,7 +33,6 @@ export const fetchOrderItems = createAsyncThunk(
       const response = await orderItemService.getAllOrderItems();
       return response;
     } catch (error) {
-      console.error('orderSlice - fetchOrderItems: Error:', error);
       return rejectWithValue(error.response?.data?.message || 'Error loading order items');
     }
   }
@@ -114,7 +113,9 @@ const orderSlice = createSlice({
       })
       .addCase(fetchOrderItems.fulfilled, (state, action) => {
         state.loading = false;
-        state.orderItems = action.payload || [];
+        // Filter out Served and Cancelled orders
+        const filteredOrderItems = (action.payload || []).filter(item => item.status !== 'Served' && item.status !== 'Cancelled');
+        state.orderItems = filteredOrderItems;
       })
       .addCase(fetchOrderItems.rejected, (state, action) => {
         state.loading = false;
