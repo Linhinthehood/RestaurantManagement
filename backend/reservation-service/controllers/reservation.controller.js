@@ -19,7 +19,7 @@ const reservationController = {
           success: false,
         });
       }
-      if (error.message === "No available tables at this time") {
+      if (error.message === "No available tables at this time!") {
         return res.status(404).json({
           message: error.message,
           success: false,
@@ -75,6 +75,18 @@ const reservationController = {
         .json({ message: "Table unassigned successfully", success: true });
     } catch (error) {
       console.error("Error unassign table: ", error);
+      if (error.message === "Reservation not found") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
+      if (error.message === "No active table assignment found") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
       res.status(500).json({
         message: "Internal server error",
         success: false,
@@ -86,12 +98,6 @@ const reservationController = {
     try {
       const { id } = req.params;
       const updated = await reservationService.checkInReservation(id);
-      if (!updated) {
-        return res.status(404).json({
-          message: "Reservation not found",
-          success: false,
-        });
-      }
       res.status(200).json({
         message: "Reservation checked in successfully",
         reservation: updated,
@@ -99,6 +105,12 @@ const reservationController = {
       });
     } catch (error) {
       console.error("Error checking in reservation: ", error);
+      if (error.message === "Resevation not found") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
       res.status(500).json({
         message: "Internal server error",
         success: false,
@@ -156,12 +168,12 @@ const reservationController = {
       );
       if (!reservations || reservations.length === 0) {
         return res.status(404).json({
-          message: `Không tìm thấy reservation nào cho số điện thoại ${phone}`,
+          message: `Reservation by phone not found: ${phone}`,
           success: false,
         });
       }
       res.status(200).json({
-        message: `Tìm thấy ${reservations.length} reservation(s) cho số điện thoại ${phone}`,
+        message: `Found ${reservations.length} reservation(s) by phone: ${phone}`,
         reservations: reservations,
         success: true,
       });
@@ -188,13 +200,19 @@ const reservationController = {
       });
     } catch (error) {
       console.error("Error fetching available tables: ", error);
-      if (error.message === "Invalid check-in time") {
-        return res.status(404).json({
+      if (error.message === "Date and time are required") {
+        return res.status(400).json({
           message: error.message,
           success: false,
         });
       }
       if (error.message === "Invalid quantity provided") {
+        return res.status(400).json({
+          message: error.message,
+          success: false,
+        });
+      }
+      if (error.message === "Invalid table data received from table service") {
         return res.status(404).json({
           message: error.message,
           success: false,
@@ -211,12 +229,6 @@ const reservationController = {
     try {
       const { id } = req.params;
       const result = await reservationService.cancelReservation(id);
-      if (!result) {
-        return res.status(404).json({
-          message: "Reservation not found",
-          success: false,
-        });
-      }
       res.status(200).json({
         message: "Reservation deleted successfully",
         reservation: result,

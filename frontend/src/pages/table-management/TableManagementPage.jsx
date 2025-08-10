@@ -17,6 +17,7 @@ const TableManagementPage = () => {
   );
   const [tables, setTables] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [reservationRefreshTrigger, setReservationRefreshTrigger] = useState(0);
 
   useEffect(() => {
     fetchAvailableTables();
@@ -26,12 +27,11 @@ const TableManagementPage = () => {
     setIsLoading(true);
     try {
       const formattedDate = selectedDate.toISOString().split("T")[0];
-      const formattedTime = selectedTime;
 
       const res = await axios.get(
         "http://localhost:3000/api/v1/reservations/available",
         {
-          params: { date: formattedDate, time: formattedTime, quantity: 4 },
+          params: { date: formattedDate, time: selectedTime, quantity: 4 },
         }
       );
       setTables(res.data.tables);
@@ -40,6 +40,11 @@ const TableManagementPage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleReservationChanged = async () => {
+    fetchAvailableTables();
+    setReservationRefreshTrigger((prev) => prev + 1);
   };
 
   return (
@@ -69,7 +74,9 @@ const TableManagementPage = () => {
                 <TableGrid
                   key={table._id}
                   table={table}
-                  onAssigned={fetchAvailableTables}
+                  selectedDate={selectedDate}
+                  selectedTime={selectedTime}
+                  onAssigned={handleReservationChanged}
                 />
               ))
             )}
@@ -80,6 +87,8 @@ const TableManagementPage = () => {
           <ReservationList
             selectedDate={selectedDate}
             selectedTime={selectedTime}
+            refreshTrigger={reservationRefreshTrigger}
+            onReservationChanged={handleReservationChanged}
           />
         </div>
       </div>

@@ -56,7 +56,7 @@ const reservationService = {
     );
 
     if (availableTables.length === 0) {
-      throw new Error("No available tables at this time");
+      throw new Error("No available tables at this time!");
     }
 
     data.deposit = quantity >= 6 ? 100000 : 0;
@@ -79,7 +79,7 @@ const reservationService = {
     return reservation;
   },
 
-  getAllReservations: async ({ dateStr, timeStr }) => {
+  getAllReservations: async ({ dateStr }) => {
     const filter = {};
     if (dateStr) {
       const date = new Date(dateStr);
@@ -96,6 +96,8 @@ const reservationService = {
       .populate("customerId", "name phone email")
       .populate("tableHistory")
       .sort({ checkInTime: 1 });
+
+    console.log("Reservations after populate:", reservations);
     // Lấy danh sách tableId duy nhất
     const allTableIds = [
       ...new Set(
@@ -290,7 +292,20 @@ const reservationService = {
     reservation.tableHistory.push(history._id);
     reservation.tableId = tableId;
     await reservation.save();
-    return reservation;
+
+    // Gọi sang table-service để lấy thông tin bàn
+    let tableInfo = null;
+    try {
+      const res = await tableServiceApi.get(`/tables/${tableId}`);
+      tableInfo = res.data;
+    } catch (e) {
+      console.error("Error fetching table info:", e.message);
+    }
+
+    return {
+      ...reservation.toObject(),
+      table: tableInfo, // Trả về thông tin bàn
+    };
   },
 
   unassignTable: async (reservationId) => {

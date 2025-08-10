@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ReservationListItem from "./ReservationListItem";
 
-const ReservationList = ({ selectedDate, selectedTime }) => {
+const ReservationList = ({
+  selectedDate,
+  selectedTime,
+  refreshTrigger,
+  onReservationChanged,
+}) => {
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -10,10 +15,10 @@ const ReservationList = ({ selectedDate, selectedTime }) => {
     setIsLoading(true);
     try {
       const formattedDate = selectedDate.toISOString().split("T")[0];
-      const formattedTime = selectedTime;
       const res = await axios.get("http://localhost:3000/api/v1/reservations", {
-        params: { date: formattedDate, time: formattedTime },
+        params: { date: formattedDate, time: selectedTime },
       });
+      console.log("Reservations:", res.data.reservations);
       setReservations(res.data.reservations || []);
     } catch (error) {
       console.error("Failed to fetch reservations:", error);
@@ -24,7 +29,7 @@ const ReservationList = ({ selectedDate, selectedTime }) => {
 
   useEffect(() => {
     fetchReservations();
-  }, [selectedDate, selectedTime]);
+  }, [selectedDate, selectedTime, refreshTrigger]);
 
   return (
     <div>
@@ -40,7 +45,11 @@ const ReservationList = ({ selectedDate, selectedTime }) => {
         <div className="space-y-3">
           {reservations.map((rsv) => (
             <div key={rsv._id}>
-              <ReservationListItem key={rsv._id} rsv={rsv} />
+              <ReservationListItem
+                key={rsv._id}
+                rsv={rsv}
+                onUnassigned={onReservationChanged}
+              />
             </div>
           ))}
         </div>
