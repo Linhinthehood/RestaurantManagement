@@ -1,24 +1,28 @@
 import React from "react";
 import { useDrag } from "react-dnd";
 import { UserIcon, ClockIcon, UsersIcon } from "@heroicons/react/24/outline";
-import { Button } from "antd";
+import { Button, message } from "antd";
 import axios from "axios";
 
 const ReservationListItem = ({ rsv, onUnassigned }) => {
   const [{ isDragging }, dragRef] = useDrag(() => ({
     type: "reservation",
-    item: { id: rsv._id },
+    item: { id: rsv._id, checkInTime: rsv.checkInTime },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   }));
   const handleUnassign = async () => {
     try {
-      await axios.put(
+      const res = await axios.put(
         `http://localhost:3000/api/v1/reservations/${rsv._id}/unassign-table`
       );
+      message.success(res.data.message);
       onUnassigned();
     } catch (error) {
+      message.error(
+        error.response?.data?.message || "Failed to unassign table"
+      );
       console.error("Failed to unassign table: ", error);
     }
   };
@@ -52,6 +56,16 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
           <div className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
             {rsv.timeStr}
           </div>
+          {rsv.tables && rsv.tables.length > 0 && (
+            <div className="mt-2 text-sm bg-gray-200 text-gray-800 p-2 rounded">
+              <p>Assigned Table:</p>
+              <ul>
+                {rsv.tables.map((table) => (
+                  <li key={table._id}>{table.name}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="mt-4">
             {rsv.tableHistory && (
               <Button danger onClick={handleUnassign} size="small">

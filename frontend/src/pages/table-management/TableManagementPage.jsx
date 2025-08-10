@@ -42,7 +42,7 @@ const TableManagementPage = () => {
     }
   };
 
-  const handleReservationChanged = () => {
+  const handleReservationChanged = async () => {
     fetchAvailableTables();
     setReservationRefreshTrigger((prev) => prev + 1);
   };
@@ -74,6 +74,8 @@ const TableManagementPage = () => {
                 <TableGrid
                   key={table._id}
                   table={table}
+                  selectedDate={selectedDate}
+                  selectedTime={selectedTime}
                   onAssigned={handleReservationChanged}
                 />
               ))

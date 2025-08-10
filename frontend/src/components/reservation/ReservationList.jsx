@@ -18,6 +18,7 @@ const ReservationList = ({
       const res = await axios.get("http://localhost:3000/api/v1/reservations", {
         params: { date: formattedDate, time: selectedTime },
       });
+      console.log("Reservations:", res.data.reservations);
       setReservations(res.data.reservations || []);
     } catch (error) {
       console.error("Failed to fetch reservations:", error);
