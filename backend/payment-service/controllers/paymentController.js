@@ -9,7 +9,7 @@ exports.createPayment = async (req, res) => {
       return res.status(400).json({ error: 'reservationId và paymentMethod là bắt buộc' });
     }
     // Gọi order-service để lấy danh sách order theo reservationId
-    const orderServiceUrl = process.env.ORDER_SERVICE_URL || 'http://localhost:3004';
+    const orderServiceUrl = process.env.ORDER_SERVICE_URL;
     const response = await axios.get(`${orderServiceUrl}/api/orders/by-reservation/${reservationId}`);
     const orders = response.data;
     if (!orders || orders.length === 0) {

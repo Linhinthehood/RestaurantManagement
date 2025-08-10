@@ -16,7 +16,8 @@ import {
   fetchArrivedAndServingReservations,
   createOrder,
   clearError,
-  clearSuccess
+  clearSuccess,
+  updateOrderStatus
 } from "../../store/orderSlice";
 
 const OrderPage = () => {
@@ -25,6 +26,7 @@ const OrderPage = () => {
   const { arrivedReservations, servingReservations, loading, error, success } = useSelector((state) => state.order);
   const { user } = useSelector((state) => state.user);
   const [creatingOrderId, setCreatingOrderId] = useState(null);
+  const [processingPaymentId, setProcessingPaymentId] = useState(null);
 
   useEffect(() => {
     dispatch(fetchArrivedAndServingReservations());
@@ -81,6 +83,36 @@ const OrderPage = () => {
     // Lấy orderId từ reservation.order nếu có
     const orderId = reservation.order?._id || reservation.orderId || reservation._id;
     navigate(`/dashboard/menu?orderId=${orderId}&reservationId=${reservation._id}`);
+  };
+
+  const handlePayment = async (reservation) => {
+    const orderId = reservation.order?._id || reservation.orderId;
+    if (!orderId) {
+      alert('Không tìm thấy order để thanh toán');
+      return;
+    }
+
+    // Xác nhận trước khi thực hiện
+    if (!window.confirm('Bạn có chắc chắn muốn hoàn thành order này và chuyển sang thanh toán?')) {
+      return;
+    }
+
+    setProcessingPaymentId(orderId);
+    try {
+      // Cập nhật order status sang Completed
+      await dispatch(updateOrderStatus({ orderId, orderStatus: 'Completed' })).unwrap();
+      
+      // Refresh danh sách reservations để cập nhật UI
+      dispatch(fetchArrivedAndServingReservations());
+      
+      // Chuyển hướng đến trang payment
+      navigate(`/dashboard/payment?orderId=${orderId}&reservationId=${reservation._id}`);
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      alert(`Lỗi: ${error.message || 'Không thể hoàn thành order'}`);
+    } finally {
+      setProcessingPaymentId(null);
+    }
   };
 
   return (
@@ -274,6 +306,27 @@ const OrderPage = () => {
                   >
                     <UtensilsCrossed className="w-4 h-4 mr-2" />
                     Continue serving / Select dishes
+                  </button>
+                  <button
+                    onClick={() => handlePayment(reservation)}
+                    className={`w-full mt-2 py-2 px-4 rounded-lg font-medium transition-colors ${
+                      processingPaymentId === (reservation.order?._id || reservation.orderId)
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                    disabled={processingPaymentId === (reservation.order?._id || reservation.orderId)}
+                  >
+                    {processingPaymentId === (reservation.order?._id || reservation.orderId) ? (
+                      <div className="flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Processing...
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Complete Order & Payment
+                      </div>
+                    )}
                   </button>
                 </div>
               </div>

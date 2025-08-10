@@ -50,6 +50,18 @@ export const updateOrderItemStatus = createAsyncThunk(
   }
 );
 
+export const updateOrderStatus = createAsyncThunk(
+  'orders/updateOrderStatus',
+  async ({ orderId, orderStatus }, { rejectWithValue }) => {
+    try {
+      const response = await orderService.updateOrderStatus(orderId, orderStatus);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || 'Error updating order status');
+    }
+  }
+);
+
 const initialState = {
   arrivedReservations: [], // reservations without orders
   servingReservations: [], // reservations with Serving status orders
@@ -136,6 +148,62 @@ const orderSlice = createSlice({
         state.success = 'Order item status updated successfully';
       })
       .addCase(updateOrderItemStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Update Order Status
+      .addCase(updateOrderStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateOrderStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        // Update the order in the reservations list
+        const updatedOrder = action.payload;
+        
+        // If order status is Completed, remove it from servingReservations
+        if (updatedOrder.orderStatus === 'Completed') {
+          state.servingReservations = state.servingReservations.filter(
+            res => res.order?._id !== updatedOrder._id && res.orderId !== updatedOrder._id
+          );
+          // Không thêm vào arrivedReservations vì order đã Completed
+          // Đảm bảo reservation không xuất hiện lại trong arrivedReservations
+          state.arrivedReservations = state.arrivedReservations.filter(
+            res => res.order?._id !== updatedOrder._id && res.orderId !== updatedOrder._id
+          );
+        } else if (updatedOrder.orderStatus === 'Serving') {
+          // Nếu chuyển sang Serving, cần di chuyển từ arrivedReservations sang servingReservations
+          const arrivedIndex = state.arrivedReservations.findIndex(
+            res => res.order?._id === updatedOrder._id || res.orderId === updatedOrder._id
+          );
+          if (arrivedIndex !== -1) {
+            const reservation = state.arrivedReservations[arrivedIndex];
+            // Xóa khỏi arrivedReservations
+            state.arrivedReservations.splice(arrivedIndex, 1);
+            // Thêm vào servingReservations với order mới
+            state.servingReservations.push({ ...reservation, order: updatedOrder });
+          }
+        } else {
+          // Các trường hợp khác - cập nhật trong place
+          // Update in arrivedReservations
+          const arrivedIndex = state.arrivedReservations.findIndex(
+            res => res.order?._id === updatedOrder._id || res.orderId === updatedOrder._id
+          );
+          if (arrivedIndex !== -1) {
+            state.arrivedReservations[arrivedIndex].order = updatedOrder;
+          }
+          // Update in servingReservations
+          const servingIndex = state.servingReservations.findIndex(
+            res => res.order?._id === updatedOrder._id || res.orderId === updatedOrder._id
+          );
+          if (servingIndex !== -1) {
+            state.servingReservations[servingIndex].order = updatedOrder;
+          }
+        }
+        
+        state.success = 'Order status updated successfully';
+      })
+      .addCase(updateOrderStatus.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

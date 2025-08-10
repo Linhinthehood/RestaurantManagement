@@ -247,13 +247,17 @@ exports.getArrivedReservations = async (req, res) => {
     // Lấy tất cả reservations có status "Arrived"
     const arrivedReservations = await ExternalService.getArrivedReservations(req.headers.authorization);
     
-    // Lấy danh sách order trạng thái Serving để kiểm tra
+    // Lấy danh sách order trạng thái Serving và Completed để kiểm tra
     const servingOrders = await Order.find({ orderStatus: 'Serving' });
+    const completedOrders = await Order.find({ orderStatus: 'Completed' });
+    
     const servingReservationIds = servingOrders.map(order => order.reservationId.toString());
+    const completedReservationIds = completedOrders.map(order => order.reservationId.toString());
     
     // Phân loại reservations
     const result = arrivedReservations.map(reservation => {
       const hasServingOrder = servingReservationIds.includes(reservation._id.toString());
+      const hasCompletedOrder = completedReservationIds.includes(reservation._id.toString());
       
       if (hasServingOrder) {
         // Reservation đã có order trạng thái Serving
@@ -264,6 +268,9 @@ exports.getArrivedReservations = async (req, res) => {
           reservation: reservation,
           order: servingOrder
         };
+      } else if (hasCompletedOrder) {
+        // Reservation đã có order trạng thái Completed - không hiển thị
+        return null;
       } else {
         // Reservation chưa có order
         return {
@@ -271,7 +278,7 @@ exports.getArrivedReservations = async (req, res) => {
           order: null
         };
       }
-    });
+    }).filter(item => item !== null); // Lọc bỏ các reservation có order Completed
     
     res.json({
       success: true,
