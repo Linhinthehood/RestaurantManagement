@@ -6,6 +6,7 @@ import MenuPage from "../pages/menu/MenuPage";
 import RegisterUserPage from "../pages/manager/RegisterUserPage";
 import InventoryPage from "../pages/manager/InventoryPage";
 import ReportPage from "../pages/manager/ReportPage";
+import CRUDPage from "../pages/manager/CRUD";
 
 export const roleConfig = {
   manager: [
@@ -25,6 +26,11 @@ export const roleConfig = {
       label: "Reports",
       path: "/dashboard/manager/reports",
       element: <ReportPage />,
+    },
+    {
+      label: "CRUD",
+      path: "/dashboard/manager/crud",
+      element: <CRUDPage />,
     },
   ],
   waiter: [
