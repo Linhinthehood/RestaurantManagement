@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const ExternalService = require('../services/externalService');
 
 // Validate ObjectId
 const validateObjectId = (field) => (req, res, next) => {
@@ -34,49 +35,14 @@ const validatePaymentMethod = (req, res, next) => {
   next();
 };
 
-// Validate discount code format
-const validateDiscountCode = (req, res, next) => {
-  const { discountCode } = req.body;
+// Validate discount ID
+const validateDiscountId = (req, res, next) => {
+  const { discountId } = req.body;
   
-  if (discountCode && typeof discountCode !== 'string') {
+  if (discountId && !mongoose.Types.ObjectId.isValid(discountId)) {
     return res.status(400).json({
       success: false,
-      error: 'discountCode phải là chuỗi'
-    });
-  }
-  
-  if (discountCode && discountCode.trim().length === 0) {
-    return res.status(400).json({
-      success: false,
-      error: 'discountCode không được để trống'
-    });
-  }
-  
-  if (discountCode && discountCode.length > 50) {
-    return res.status(400).json({
-      success: false,
-      error: 'discountCode không được quá 50 ký tự'
-    });
-  }
-  
-  next();
-};
-
-// Validate notes length
-const validateNotes = (req, res, next) => {
-  const { notes } = req.body;
-  
-  if (notes && typeof notes !== 'string') {
-    return res.status(400).json({
-      success: false,
-      error: 'notes phải là chuỗi'
-    });
-  }
-  
-  if (notes && notes.length > 500) {
-    return res.status(400).json({
-      success: false,
-      error: 'notes không được quá 500 ký tự'
+      error: 'discountId không hợp lệ'
     });
   }
   
@@ -102,6 +68,40 @@ const validateCreatePayment = (req, res, next) => {
   }
   
   next();
+};
+
+// Validate order status phải là "Completed" trước khi tạo payment
+const validateOrderCompletedForPayment = async (req, res, next) => {
+  const { reservationId } = req.body;
+  
+  try {
+    // Lấy orders theo reservationId
+    const ordersResponse = await ExternalService.getOrdersByReservationId(reservationId, req.headers.authorization);
+    
+    if (!ordersResponse || !ordersResponse.data || ordersResponse.data.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Không tìm thấy order nào cho reservation này'
+      });
+    }
+    
+    // Kiểm tra order đầu tiên có trạng thái "Completed" không
+    const order = ordersResponse.data[0];
+    if (order.orderStatus !== 'Completed') {
+      return res.status(400).json({
+        success: false,
+        error: `Chỉ có thể tạo payment cho order có trạng thái "Completed". Trạng thái hiện tại: ${order.orderStatus}`
+      });
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Error validating order status for payment:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Lỗi khi kiểm tra trạng thái order'
+    });
+  }
 };
 
 // Validate payment ID parameter
@@ -132,29 +132,19 @@ const validateReservationId = (req, res, next) => {
   next();
 };
 
-// Validate update payment fields
-const validateUpdatePayment = (req, res, next) => {
-  const allowedFields = ['status', 'notes', 'transactionInfo'];
-  const updateFields = Object.keys(req.body);
-  
-  const invalidFields = updateFields.filter(field => !allowedFields.includes(field));
-  
-  if (invalidFields.length > 0) {
-    return res.status(400).json({
-      success: false,
-      error: `Không được cập nhật các trường: ${invalidFields.join(', ')}`
-    });
-  }
-  
-  next();
-};
-
 // Validate payment status
 const validatePaymentStatus = (req, res, next) => {
   const { status } = req.body;
-  const validStatuses = ['Pending', 'Completed', 'Failed', 'Cancelled', 'Refunded'];
+  const validStatuses = ['Pending', 'Completed', 'Cancelled'];
   
-  if (status && !validStatuses.includes(status)) {
+  if (!status) {
+    return res.status(400).json({
+      success: false,
+      error: 'status là bắt buộc'
+    });
+  }
+  
+  if (!validStatuses.includes(status)) {
     return res.status(400).json({
       success: false,
       error: `status phải là một trong: ${validStatuses.join(', ')}`
@@ -167,11 +157,10 @@ const validatePaymentStatus = (req, res, next) => {
 module.exports = {
   validateObjectId,
   validatePaymentMethod,
-  validateDiscountCode,
-  validateNotes,
+  validateDiscountId,
   validateCreatePayment,
+  validateOrderCompletedForPayment,
   validatePaymentId,
   validateReservationId,
-  validateUpdatePayment,
   validatePaymentStatus
 };

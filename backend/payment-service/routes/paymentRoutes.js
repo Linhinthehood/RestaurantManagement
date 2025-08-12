@@ -9,12 +9,11 @@ const {
 } = require('../middlewares/authMiddleware');
 const {
   validateCreatePayment,
+  validateOrderCompletedForPayment,
   validatePaymentId,
   validateReservationId,
   validatePaymentMethod,
-  validateDiscountCode,
-  validateNotes,
-  validateUpdatePayment,
+  validateDiscountId,
   validatePaymentStatus
 } = require('../middlewares/paymentValidation');
 
@@ -24,8 +23,8 @@ router.post('/',
   requirePaymentCreation,
   validateCreatePayment,
   validatePaymentMethod,
-  validateDiscountCode,
-  validateNotes,
+  validateDiscountId,
+  validateOrderCompletedForPayment,
   paymentController.createPayment
 );
 
@@ -50,6 +49,23 @@ router.get('/by-reservation/:reservationId',
   requirePaymentAccess,
   validateReservationId,
   paymentController.getPaymentsByReservationId
+);
+
+// Cập nhật trạng thái payment
+router.patch('/:id/status', 
+  protect, 
+  requirePaymentManagement,
+  validatePaymentId,
+  validatePaymentStatus,
+  paymentController.updatePaymentStatus
+);
+
+// Xóa payment
+router.delete('/:id', 
+  protect, 
+  requirePaymentManagement,
+  validatePaymentId,
+  paymentController.deletePayment
 );
 
 module.exports = router;

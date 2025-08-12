@@ -1,9 +1,9 @@
 const axios = require('axios');
 
 // Base URLs cho từng service (trong Docker network)
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:3001';
-const RESERVATION_SERVICE_URL = process.env.RESERVATION_SERVICE_URL || 'http://localhost:3002';
-const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL || 'http://localhost:3004';
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL;
+const RESERVATION_SERVICE_URL = process.env.RESERVATION_SERVICE_URL;
+const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL;
 
 class ExternalService {
   // Lấy thông tin user từ user-service

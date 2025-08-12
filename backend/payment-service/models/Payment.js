@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const PaymentSchema = new Schema({
-  // Mã payment tự động (DD-MM-YY + 4 số thứ tự)
+  // 1. Mã payment tự động (DD-MM-YY + 4 số thứ tự)
   paymentCode: {
     type: String,
     required: true,
@@ -10,99 +10,53 @@ const PaymentSchema = new Schema({
     length: 10
   },
   
-  // Order ID (chỉ 1 order thay vì array)
-  orderId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Order',
-    required: true
-  },
-  
-  // Reservation ID
+  // 2. Reservation ID (lấy từ orderService thông qua externalService)
   reservationId: {
     type: Schema.Types.ObjectId,
     ref: 'Reservation',
     required: true
   },
   
-  // Phương thức thanh toán (chỉ Cash hoặc Momo)
+  // 3. Phương thức thanh toán (chỉ Cash hoặc Momo)
   paymentMethod: {
     type: String,
     enum: ['Cash', 'Momo'],
     required: true
   },
   
-  // Giá gốc (từ order)
+  // 4. Giá gốc (TotalPrice từ Order)
   originalAmount: {
     type: mongoose.Types.Decimal128,
     required: true,
     min: 0
   },
   
-  // Discount ID (reference đến Discount model)
+  // 5. Discount ID (reference đến Discount model)
   discountId: {
     type: Schema.Types.ObjectId,
     ref: 'Discount',
     default: null
   },
   
-  // Thuế (VAT)
-  taxAmount: {
-    type: mongoose.Types.Decimal128,
-    default: 0,
-    min: 0
-  },
-  
-  // Phần trăm thuế
-  taxPercentage: {
-    type: Number,
-    default: 10, // 10% VAT
-    min: 0
-  },
-  
-  // Tiền đặt cọc (deposit)
-  depositAmount: {
-    type: mongoose.Types.Decimal128,
-    default: 0,
-    min: 0
-  },
-  
-  // Giá cuối cùng (sau khi áp dụng tất cả)
+  // Giá cuối cùng (FinalPrice = TotalPrice + Tax - Discount - Deposit)
   finalAmount: {
     type: mongoose.Types.Decimal128,
     required: true,
     min: 0
   },
   
-  // Trạng thái payment
-  status: {
-    type: String,
-    enum: ['Pending', 'Completed', 'Failed', 'Cancelled', 'Refunded'],
-    default: 'Pending'
-  },
-  
-  // Người tạo payment
+  // 6. Người tạo payment (lấy từ token)
   createdBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
   
-  // Ghi chú
-  notes: {
+  // 8. Trạng thái thanh toán
+  status: {
     type: String,
-    maxlength: 500
-  },
-  
-  // Ngày thanh toán
-  paymentDate: {
-    type: Date,
-    default: Date.now
-  },
-  
-  // Ngày hoàn thành
-  completedAt: {
-    type: Date,
-    default: null
+    enum: ['Pending', 'Completed', 'Cancelled'],
+    default: 'Pending'
   },
   
   // Thông tin giao dịch (cho Momo)
@@ -111,8 +65,26 @@ const PaymentSchema = new Schema({
     bankCode: String,
     bankName: String,
     accountNumber: String,
-    accountName: String
+    accountName: String,
+    paymentUrl: String, // URL thanh toán Momo
+    qrCode: String      // QR code thanh toán
   },
+  
+  // Lịch sử thay đổi trạng thái
+  statusHistory: [{
+    status: {
+      type: String,
+      enum: ['Pending', 'Completed', 'Cancelled']
+    },
+    changedAt: {
+      type: Date,
+      default: Date.now
+    },
+    changedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  }],
   
   createdAt: {
     type: Date,
@@ -129,15 +101,22 @@ const PaymentSchema = new Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual field để tính tổng số tiền đã giảm
+// Virtual field để tính tổng số tiền đã giảm (sẽ được tính động trong controller)
 PaymentSchema.virtual('totalDiscount').get(function() {
-  return this.discountAmount || 0;
+  return 0; // Sẽ được tính động từ discountId và originalAmount
 });
 
-// Virtual field để tính tổng phí
+// Virtual field để tính tổng phí (sẽ được tính động trong controller)
 PaymentSchema.virtual('totalFees').get(function() {
-  return (this.taxAmount || 0) + (this.depositAmount || 0);
+  return 0; // Sẽ được tính động từ tax và deposit
 });
+
+// Virtual field để kiểm tra có thể hủy không
+PaymentSchema.virtual('canCancel').get(function() {
+  return this.status === 'Pending';
+});
+
+
 
 // Middleware để cập nhật updatedAt
 PaymentSchema.pre('save', function(next) {
@@ -145,10 +124,26 @@ PaymentSchema.pre('save', function(next) {
   next();
 });
 
-// Middleware để tự động tạo paymentCode trước khi save
-PaymentSchema.pre('save', async function(next) {
-  if (this.isNew && !this.paymentCode) {
-    this.paymentCode = await generatePaymentCode();
+// Middleware để tự động tạo paymentCode TRƯỚC khi validate (để tránh lỗi required)
+PaymentSchema.pre('validate', async function(next) {
+  try {
+    if (this.isNew && !this.paymentCode) {
+      this.paymentCode = await generatePaymentCode();
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Middleware để tự động cập nhật statusHistory khi status thay đổi
+PaymentSchema.pre('save', function(next) {
+  if (this.isModified('status')) {
+    this.statusHistory.push({
+      status: this.status,
+      changedAt: new Date(),
+      changedBy: this.createdBy
+    });
   }
   next();
 });
@@ -182,10 +177,10 @@ async function generatePaymentCode() {
 // Index để tối ưu query
 PaymentSchema.index({ paymentCode: 1 }, { unique: true });
 PaymentSchema.index({ reservationId: 1 });
-PaymentSchema.index({ orderId: 1 });
 PaymentSchema.index({ createdBy: 1 });
 PaymentSchema.index({ status: 1 });
 PaymentSchema.index({ createdAt: -1 });
-PaymentSchema.index({ paymentDate: -1 });
+
+PaymentSchema.index({ discountId: 1 });
 
 module.exports = mongoose.model('Payment', PaymentSchema);
