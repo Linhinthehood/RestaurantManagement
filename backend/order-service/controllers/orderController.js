@@ -208,24 +208,24 @@ exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
+    
     const items = await OrderItem.find({ _id: { $in: order.orderItemId } });
-    // Enrich orderItems with food name
-    const enrichedItems = await Promise.all(items.map(async (item) => {
-      const obj = item.toObject();
-      if (obj.foodId) {
-        // Lấy tên món từ food-service nếu cần, hoặc populate nếu đã có
-        try {
-          const food = await require('../services/externalService').getFoodById(obj.foodId, req.headers.authorization);
-          obj.foodName = food?.name || 'Unknown Food';
-        } catch {
-          obj.foodName = 'Unknown Food';
-        }
-      }
-      return obj;
-    }));
-    res.json({ ...(await enrichOrder(order, items, req)), orderItems: enrichedItems });
+    
+    // Enrich order với thông tin đầy đủ
+    const enrichedOrder = await enrichOrder(order, items, req);
+    
+    res.json({
+      success: true,
+      message: 'Order retrieved successfully',
+      data: enrichedOrder
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error getting order by ID:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: err.message 
+    });
   }
 };
 
@@ -234,10 +234,38 @@ exports.getOrdersByReservationId = async (req, res) => {
   try {
     const { reservationId } = req.params;
     const orders = await Order.find({ reservationId });
-    if (!orders || orders.length === 0) return res.status(404).json({ error: 'Không tìm thấy order nào cho reservationId này' });
-    res.json(orders);
+    
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Không tìm thấy order nào cho reservationId này' 
+      });
+    }
+    
+    // Lấy tất cả orderItems cho tất cả orders
+    const allOrderItemIds = orders.flatMap(order => order.orderItemId);
+    const allOrderItems = await OrderItem.find({ _id: { $in: allOrderItemIds } });
+    
+    // Enrich từng order với thông tin đầy đủ
+    const enrichedOrders = await Promise.all(orders.map(async (order) => {
+      const items = allOrderItems.filter(item => 
+        order.orderItemId.map(String).includes(String(item._id))
+      );
+      return await enrichOrder(order, items, req);
+    }));
+    
+    res.json({
+      success: true,
+      message: 'Orders retrieved successfully',
+      data: enrichedOrders
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error getting orders by reservation ID:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error',
+      error: err.message 
+    });
   }
 };
 

@@ -65,9 +65,10 @@ services:
     ports:
       - "${PAYMENT_SERVICE_PORT}:${PAYMENT_SERVICE_PORT}"
     environment:
-      - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${PAYMENT_DB}
+      - MONGODB_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${PAYMENT_DB}
       - USER_SERVICE_URL=http://user-service:3001
-      - NODE_ENV=development
+      - ORDER_SERVICE_URL=http://order-service:3004
+      - RESERVATION_SERVICE_URL=http://reservation-service:3002
     # depends_on:
     #   - mongo
 
