@@ -6,8 +6,36 @@ export const fetchArrivedAndServingReservations = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await orderService.getArrivedAndServingReservations();
-      // response.data: [ { reservation, order } ]
-      return response.data || response;
+      // response.data: [ { reservation, order, orderItems? } ]
+      const data = response.data || response;
+      
+      // If orderItems are not included in the response, fetch them for each order
+      if (data && data.length > 0) {
+        const enhancedData = await Promise.all(
+          data.map(async (item) => {
+            if (item.order && !item.orderItems) {
+              try {
+                // Fetch order details including orderItems
+                const orderResponse = await orderService.getOrderById(item.order._id);
+                return {
+                  ...item,
+                  orderItems: orderResponse.data?.orderItems || []
+                };
+              } catch (err) {
+                console.error('Failed to fetch order items for order:', item.order._id, err);
+                return {
+                  ...item,
+                  orderItems: []
+                };
+              }
+            }
+            return item;
+          })
+        );
+        return enhancedData;
+      }
+      
+      return data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Error loading reservations list');
     }
@@ -50,6 +78,18 @@ export const updateOrderItemStatus = createAsyncThunk(
   }
 );
 
+export const updateOrderStatus = createAsyncThunk(
+  'orders/updateOrderStatus',
+  async ({ orderId, status }, { rejectWithValue }) => {
+    try {
+      const response = await orderService.updateOrderStatus(orderId, status);
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Error updating order status');
+    }
+  }
+);
+
 const initialState = {
   arrivedReservations: [], // reservations without orders
   servingReservations: [], // reservations with Serving status orders
@@ -78,16 +118,39 @@ const orderSlice = createSlice({
       })
       .addCase(fetchArrivedAndServingReservations.fulfilled, (state, action) => {
         state.loading = false;
+        console.log('API Response payload:', action.payload);
+        
         // Classify: no orders and orders with Serving status
         state.arrivedReservations = [];
         state.servingReservations = [];
         (action.payload || []).forEach(item => {
+          console.log('Processing item:', item);
           if (!item.order) {
+            // Reservation chưa có order
             state.arrivedReservations.push(item.reservation);
-          } else if (item.order.orderStatus === 'Serving') {
-            state.servingReservations.push({ ...item.reservation, order: item.order });
+          } else if (item.order.orderStatus === 'Serving' || item.order.orderStatus === 'Completed') {
+            // Reservation có order đang Serving hoặc Completed
+            // Merge order with orderItems for serving reservations
+            // orderItems is at the same level as order in the response
+            // Check if orderItems exists at the same level as order
+            const orderItems = item.orderItems || item.order.orderItems || [];
+            console.log('Found orderItems:', orderItems);
+            
+            const orderWithItems = {
+              ...item.order,
+              orderItems: orderItems
+            };
+            console.log('Order with items:', orderWithItems);
+            state.servingReservations.push({ 
+              ...item.reservation, 
+              order: orderWithItems 
+            });
           }
+          // Các trạng thái khác không xử lý
         });
+        
+        console.log('Final arrived reservations:', state.arrivedReservations);
+        console.log('Final serving reservations:', state.servingReservations);
       })
       .addCase(fetchArrivedAndServingReservations.rejected, (state, action) => {
         state.loading = false;
@@ -136,6 +199,19 @@ const orderSlice = createSlice({
         state.success = 'Order item status updated successfully';
       })
       .addCase(updateOrderItemStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Update Order Status
+      .addCase(updateOrderStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateOrderStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = 'Order status updated successfully';
+      })
+      .addCase(updateOrderStatus.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

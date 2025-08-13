@@ -10,14 +10,17 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  UtensilsCrossed
+  UtensilsCrossed,
+  CreditCard
 } from "lucide-react";
 import {
   fetchArrivedAndServingReservations,
   createOrder,
+  updateOrderStatus,
   clearError,
   clearSuccess
 } from "../../store/orderSlice";
+import { paymentService } from "../../services/paymentService";
 
 const OrderPage = () => {
   const dispatch = useDispatch();
@@ -25,10 +28,27 @@ const OrderPage = () => {
   const { arrivedReservations, servingReservations, loading, error, success } = useSelector((state) => state.order);
   const { user } = useSelector((state) => state.user);
   const [creatingOrderId, setCreatingOrderId] = useState(null);
+  const [closingOrderId, setClosingOrderId] = useState(null);
+  const [creatingPaymentId, setCreatingPaymentId] = useState(null);
+  const [localError, setLocalError] = useState(null);
+  const [localSuccess, setLocalSuccess] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(null);
 
   useEffect(() => {
     dispatch(fetchArrivedAndServingReservations());
   }, [dispatch]);
+
+  // Debug: Log serving reservations when they change
+  useEffect(() => {
+    console.log('Serving reservations updated:', servingReservations);
+    servingReservations.forEach(reservation => {
+      console.log(`Reservation ${reservation._id}:`, {
+        order: reservation.order,
+        orderItems: reservation.order?.orderItems,
+        canComplete: canCompleteOrder(reservation)
+      });
+    });
+  }, [servingReservations]);
 
   useEffect(() => {
     if (error) {
@@ -48,16 +68,42 @@ const OrderPage = () => {
     }
   }, [success, dispatch]);
 
+  useEffect(() => {
+    if (localSuccess) {
+      const timer = setTimeout(() => {
+        setLocalSuccess(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [localSuccess]);
+
+  useEffect(() => {
+    if (localError) {
+      const timer = setTimeout(() => {
+        setLocalError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [localError]);
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString('en-US');
   };
 
   const handleCreateOrder = async (reservation) => {
     if (!user) {
-      alert('Please login to create an order');
+      setLocalError('Please login to create an order');
       return;
     }
-    if (!window.confirm('Do you want to create an order for this reservation?')) return;
+    
+    setShowConfirm({
+      type: 'createOrder',
+      message: 'Do you want to create an order for this reservation?',
+      reservation: reservation
+    });
+  };
+
+  const confirmCreateOrder = async (reservation) => {
     setCreatingOrderId(reservation._id);
     try {
       const orderData = {
@@ -70,10 +116,13 @@ const OrderPage = () => {
       };
       await dispatch(createOrder(orderData)).unwrap();
       dispatch(fetchArrivedAndServingReservations());
+      setLocalSuccess('Order created successfully!');
     } catch (error) {
       console.error('Error creating order:', error);
+      setLocalError('Failed to create order. Please try again.');
     } finally {
       setCreatingOrderId(null);
+      setShowConfirm(null);
     }
   };
 
@@ -83,18 +132,218 @@ const OrderPage = () => {
     navigate(`/dashboard/menu?orderId=${orderId}&reservationId=${reservation._id}`);
   };
 
+  // Check if order can be completed (all order items are Served or Cancelled)
+  const canCompleteOrder = (reservation) => {
+    console.log('Checking canCompleteOrder for reservation:', reservation._id);
+    console.log('Reservation order:', reservation.order);
+    console.log('Order items:', reservation.order?.orderItems);
+    
+    if (!reservation.order || !reservation.order.orderItems || reservation.order.orderItems.length === 0) {
+      console.log('Cannot complete: No order or order items');
+      return false;
+    }
+    
+    // Order can be completed when all items are either served or cancelled
+    const canComplete = reservation.order.orderItems.every(item => {
+      const isComplete = item.status === 'Served' || item.status === 'Cancelled';
+      console.log(`Item ${item._id} status: ${item.status}, isComplete: ${isComplete}`);
+      return isComplete;
+    });
+    
+    console.log('Can complete order:', canComplete);
+    return canComplete;
+  };
+
+  // Handle close order (change status to Completed)
+  const handleCloseOrder = async (reservation) => {
+    if (!reservation.order?._id) {
+      setLocalError('No order found for this reservation');
+      return;
+    }
+
+    if (!canCompleteOrder(reservation)) {
+      setLocalError('Cannot close order. Some order items are still pending.');
+      return;
+    }
+
+    setShowConfirm({
+      type: 'closeOrder',
+      message: 'Are you sure you want to close this order? Order will be moved to Completed status.',
+      reservation: reservation
+    });
+  };
+
+  const confirmCloseOrder = async (reservation) => {
+    setClosingOrderId(reservation._id);
+    try {
+      await dispatch(updateOrderStatus({ 
+        orderId: reservation.order._id, 
+        status: 'Completed' 
+      })).unwrap();
+      
+      // Refresh the reservations list
+      dispatch(fetchArrivedAndServingReservations());
+      setLocalSuccess('Order closed successfully!');
+    } catch (error) {
+      console.error('Error closing order:', error);
+      setLocalError('Failed to close order. Please try again.');
+    } finally {
+      setClosingOrderId(null);
+      setShowConfirm(null);
+    }
+  };
+
+  // Handle create payment and navigate to payment page
+  const handleCreatePayment = async (reservation) => {
+    if (!reservation.order?._id) {
+      setLocalError('No order found for this reservation');
+      return;
+    }
+
+    if (reservation.order.orderStatus !== 'Completed') {
+      setLocalError('Order must be completed before creating payment');
+      return;
+    }
+
+    setShowConfirm({
+      type: 'createPayment',
+      message: 'Do you want to create a payment for this order?',
+      reservation: reservation
+    });
+  };
+
+  const confirmCreatePayment = async (reservation) => {
+    setCreatingPaymentId(reservation._id);
+    try {
+      // Create payment through payment service
+      const paymentData = {
+        reservationId: reservation._id,
+        paymentMethod: 'Cash', // Default method, can be changed in payment page
+        discountId: null // No discount by default
+      };
+
+      const paymentResponse = await paymentService.createPayment(paymentData);
+      
+      if (paymentResponse.success) {
+        // Navigate to payment page with payment ID
+        navigate(`/dashboard/payment?paymentId=${paymentResponse.data._id}&orderId=${reservation.order._id}&reservationId=${reservation._id}`);
+      }
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      setLocalError('Failed to create payment. Please try again.');
+    } finally {
+      setCreatingPaymentId(null);
+      setShowConfirm(null);
+    }
+  };
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
-          <AlertCircle className="w-5 h-5 mr-2" />
-          {error}
+      {/* Fixed Notifications */}
+      {(error || localError) && (
+        <div className="fixed top-6 right-6 z-50 bg-white border-l-4 border-red-500 rounded-lg shadow-xl px-6 py-4 max-w-md transform transition-all duration-300 translate-x-0">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              </div>
+            </div>
+            <div className="ml-3 flex-1">
+              <h4 className="text-sm font-semibold text-gray-900 mb-1">Error</h4>
+              <p className="text-sm text-gray-700 leading-relaxed">{error || localError}</p>
+            </div>
+            <button 
+              onClick={() => {
+                if (error) dispatch(clearError());
+                if (localError) setLocalError(null);
+              }}
+              className="ml-3 flex-shrink-0 w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
-      {success && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center">
-          <CheckCircle className="w-5 h-5 mr-2" />
-          {success}
+      {(success || localSuccess) && (
+        <div className="fixed top-6 right-6 z-50 bg-white border-l-4 border-green-500 rounded-lg shadow-xl px-6 py-4 max-w-md transform transition-all duration-300 translate-x-0">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+            </div>
+            <div className="ml-3 flex-1">
+              <h4 className="text-sm font-semibold text-gray-900 mb-1">Success</h4>
+              <p className="text-sm text-gray-700 leading-relaxed">{success || localSuccess}</p>
+            </div>
+            <button 
+              onClick={() => {
+                if (success) dispatch(clearSuccess());
+                if (localSuccess) setLocalSuccess(null);
+              }}
+              className="ml-3 flex-shrink-0 w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100">
+            {/* Header with icon */}
+            <div className="p-6 pb-4">
+              <div className={`flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full ${
+                showConfirm.type === 'createOrder' ? 'bg-blue-100' :
+                showConfirm.type === 'closeOrder' ? 'bg-orange-100' :
+                'bg-green-100'
+              }`}>
+                {showConfirm.type === 'createOrder' && <Plus className="w-8 h-8 text-blue-600" />}
+                {showConfirm.type === 'closeOrder' && <CheckCircle className="w-8 h-8 text-orange-600" />}
+                {showConfirm.type === 'createPayment' && <CreditCard className="w-8 h-8 text-green-600" />}
+              </div>
+              <h3 className="text-xl font-semibold text-center text-gray-900 mb-2">
+                {showConfirm.type === 'createOrder' && 'Create Order'}
+                {showConfirm.type === 'closeOrder' && 'Close Order'}
+                {showConfirm.type === 'createPayment' && 'Create Payment'}
+              </h3>
+              <p className="text-gray-600 text-center leading-relaxed">{showConfirm.message}</p>
+            </div>
+            
+            {/* Action buttons */}
+            <div className="px-6 pb-6">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirm(null)}
+                  className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (showConfirm.type === 'createOrder') {
+                      confirmCreateOrder(showConfirm.reservation);
+                    } else if (showConfirm.type === 'closeOrder') {
+                      confirmCloseOrder(showConfirm.reservation);
+                    } else if (showConfirm.type === 'createPayment') {
+                      confirmCreatePayment(showConfirm.reservation);
+                    }
+                  }}
+                  className={`flex-1 px-4 py-3 text-white rounded-xl font-medium transition-colors ${
+                    showConfirm.type === 'createOrder' ? 'bg-blue-600 hover:bg-blue-700' :
+                    showConfirm.type === 'closeOrder' ? 'bg-orange-600 hover:bg-orange-700' :
+                    'bg-green-600 hover:bg-green-700'
+                  }`}
+                >
+                  {showConfirm.type === 'createOrder' && 'Create Order'}
+                  {showConfirm.type === 'closeOrder' && 'Close Order'}
+                  {showConfirm.type === 'createPayment' && 'Create Payment'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
       <div className="mb-6">
@@ -268,13 +517,104 @@ const OrderPage = () => {
                         <span className="font-medium">Note:</span> {reservation.note}
                       </div>
                     )}
+                    
+                    {/* Order Items Status */}
+                    {reservation.order?.orderItems && reservation.order.orderItems.length > 0 && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="text-sm font-medium text-gray-700 mb-2">Food Status:</div>
+                        <div className="space-y-1">
+                          {reservation.order.orderItems.map((item, index) => (
+                            <div key={item._id || index} className="flex justify-between items-center text-xs">
+                              <span className="text-gray-600">
+                                {item.foodName || `Item ${index + 1}`} (x{item.quantity})
+                              </span>
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                item.status === 'Served' ? 'bg-green-100 text-green-800' :
+                                item.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                                item.status === 'Ready_to_serve' ? 'bg-orange-100 text-orange-800' :
+                                item.status === 'Preparing' ? 'bg-blue-100 text-blue-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {item.status === 'Served' ? 'Served' :
+                                 item.status === 'Cancelled' ? 'Cancelled' :
+                                 item.status === 'Ready_to_serve' ? 'Ready' :
+                                 item.status === 'Preparing' ? 'Preparing' :
+                                 'Pending'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <button
-                    className="w-full py-2 px-4 rounded-lg font-medium bg-green-600 hover:bg-green-700 text-white flex items-center justify-center"
-                  >
-                    <UtensilsCrossed className="w-4 h-4 mr-2" />
-                    Continue serving / Select dishes
-                  </button>
+                  <div className="space-y-2">
+                    {/* Only show "Continue serving" button when order is still Serving */}
+                    {reservation.order.orderStatus === 'Serving' && (
+                      <button
+                        onClick={() => handleGoToMenu(reservation)}
+                        className="w-full py-2 px-4 rounded-lg font-medium bg-green-600 hover:bg-green-700 text-white flex items-center justify-center"
+                      >
+                        <UtensilsCrossed className="w-4 h-4 mr-2" />
+                        Continue serving / Select dishes
+                      </button>
+                    )}
+                    
+                    {/* Close Order button - only show when all order items are Served or Cancelled */}
+                    {canCompleteOrder(reservation) && reservation.order.orderStatus === 'Serving' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCloseOrder(reservation);
+                        }}
+                        disabled={closingOrderId === reservation._id}
+                        className={`w-full py-2 px-4 rounded-lg font-medium flex items-center justify-center ${
+                          closingOrderId === reservation._id
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-orange-600 hover:bg-orange-700 text-white'
+                        }`}
+                      >
+                        {closingOrderId === reservation._id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Closing order...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Close Order
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    {/* Payment button - only show when order is Completed */}
+                    {reservation.order.orderStatus === 'Completed' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCreatePayment(reservation);
+                        }}
+                        disabled={creatingPaymentId === reservation._id}
+                        className={`w-full py-2 px-4 rounded-lg font-medium flex items-center justify-center ${
+                          creatingPaymentId === reservation._id
+                            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                      >
+                        {creatingPaymentId === reservation._id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Creating payment...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-4 h-4 mr-2" />
+                            Create Payment
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))

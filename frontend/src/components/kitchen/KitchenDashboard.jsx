@@ -1,24 +1,20 @@
 import React from 'react';
 
 const KitchenDashboard = ({ orderItems, selectedStatus, onStatusFilterChange }) => {
-  // Calculate statistics (exclude Served and Cancelled items)
+  // Calculate statistics (only for active order items)
   const stats = {
     total: orderItems.filter(item => item.status !== 'Served' && item.status !== 'Cancelled').length,
     pending: orderItems.filter(item => item.status === 'Pending').length,
     preparing: orderItems.filter(item => item.status === 'Preparing').length,
-    ready: orderItems.filter(item => item.status === 'Ready_to_serve').length,
-    served: orderItems.filter(item => item.status === 'Served').length,
-    cancelled: orderItems.filter(item => item.status === 'Cancelled').length
+    ready: orderItems.filter(item => item.status === 'Ready_to_serve').length
   };
 
-  // Status options for filter
+  // Status options for filter (exclude Served and Cancelled as they are not displayed)
   const statusOptions = [
     { value: 'all', label: 'All' },
     { value: 'Pending', label: 'Pending' },
     { value: 'Preparing', label: 'Preparing' },
-    { value: 'Ready_to_serve', label: 'Ready to Serve' },
-    { value: 'Served', label: 'Served' },
-    { value: 'Cancelled', label: 'Cancelled' }
+    { value: 'Ready_to_serve', label: 'Ready to Serve' }
   ];
 
   return (
@@ -49,7 +45,7 @@ const KitchenDashboard = ({ orderItems, selectedStatus, onStatusFilterChange }) 
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
           <div className="text-sm text-blue-700">Total</div>
@@ -68,16 +64,6 @@ const KitchenDashboard = ({ orderItems, selectedStatus, onStatusFilterChange }) 
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-green-600">{stats.ready}</div>
           <div className="text-sm text-green-700">Ready</div>
-        </div>
-        
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-gray-600">{stats.served}</div>
-          <div className="text-sm text-gray-700">Served</div>
-        </div>
-        
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-red-600">{stats.cancelled}</div>
-          <div className="text-sm text-red-700">Cancelled</div>
         </div>
       </div>
 

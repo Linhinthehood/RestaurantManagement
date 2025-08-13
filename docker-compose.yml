@@ -44,6 +44,7 @@ services:
       - TABLE_SERVICE_URL=http://table-service:3005
       - RESERVATION_SERVICE_URL=http://reservation-service:3002
       - FOOD_SERVICE_URL=http://food-service:3003
+      - PAYMENT_SERVICE_URL=http://payment-service:3006
       - NODE_ENV=development
     # depends_on:
     #   - mongo

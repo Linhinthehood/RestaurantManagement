@@ -64,6 +64,36 @@ async function enrichOrder(order, orderItems = [], req) {
       }
     }
 
+    // Enrich orderItems với thông tin food
+    const enrichedOrderItems = await Promise.all(orderItems.map(async (item) => {
+      try {
+        // Gọi sang food-service để lấy thông tin food
+        const foodResponse = await ExternalService.getFoodById(item.foodId, req.headers.authorization);
+        let foodData = null;
+        
+        if (foodResponse) {
+          if (foodResponse.data && foodResponse.data.food) {
+            foodData = foodResponse.data.food;
+          } else if (foodResponse.food) {
+            foodData = foodResponse.food;
+          } else {
+            foodData = foodResponse;
+          }
+        }
+        
+        return {
+          ...item.toObject(),
+          foodName: foodData ? foodData.name : `Food ID: ${item.foodId}`
+        };
+      } catch (err) {
+        console.error('Error fetching food details for item:', item._id, err);
+        return {
+          ...item.toObject(),
+          foodName: `Food ID: ${item.foodId}`
+        };
+      }
+    }));
+
     return {
       ...order.toObject(),
       tables: tables, // mảng bàn
@@ -73,7 +103,7 @@ async function enrichOrder(order, orderItems = [], req) {
         ...reservationData,
         tables: undefined // xoá trường tables khỏi reservation để tránh trùng lặp
       } : null, // object reservation
-      orderItems: orderItems.map(item => item.toObject())
+      orderItems: enrichedOrderItems
     };
   } catch (error) {
     console.error('Error enriching order:', error.message);
@@ -275,31 +305,54 @@ exports.getArrivedReservations = async (req, res) => {
     // Lấy tất cả reservations có status "Arrived"
     const arrivedReservations = await ExternalService.getArrivedReservations(req.headers.authorization);
     
-    // Lấy danh sách order trạng thái Serving để kiểm tra
-    const servingOrders = await Order.find({ orderStatus: 'Serving' });
-    const servingReservationIds = servingOrders.map(order => order.reservationId.toString());
+    // Lấy danh sách tất cả orders để kiểm tra (bao gồm Serving và Completed)
+    const allOrders = await Order.find({ 
+      orderStatus: { $in: ['Serving', 'Completed'] } 
+    });
     
-    // Phân loại reservations
-    const result = arrivedReservations.map(reservation => {
-      const hasServingOrder = servingReservationIds.includes(reservation._id.toString());
+    // Tạo map để tra cứu nhanh orders theo reservationId
+    const ordersByReservationId = new Map();
+    allOrders.forEach(order => {
+      ordersByReservationId.set(order.reservationId.toString(), order);
+    });
+    
+    // Phân loại reservations và lọc ra những đã có payment completed
+    const result = [];
+    
+    for (const reservation of arrivedReservations) {
+      const existingOrder = ordersByReservationId.get(reservation._id.toString());
       
-      if (hasServingOrder) {
-        // Reservation đã có order trạng thái Serving
-        const servingOrder = servingOrders.find(order => 
-          order.reservationId.toString() === reservation._id.toString()
-        );
-        return {
-          reservation: reservation,
-          order: servingOrder
-        };
+      if (existingOrder) {
+        if (existingOrder.orderStatus === 'Serving') {
+          // Reservation có order đang Serving - hiển thị trong danh sách serving
+          result.push({
+            reservation: reservation,
+            order: existingOrder
+          });
+        } else if (existingOrder.orderStatus === 'Completed') {
+          // Kiểm tra xem đã có payment completed chưa
+          const hasCompletedPayment = await ExternalService.hasCompletedPayment(
+            reservation._id.toString(), 
+            req.headers.authorization
+          );
+          
+          if (!hasCompletedPayment) {
+            // Chưa có payment completed - vẫn hiển thị để tạo payment
+            result.push({
+              reservation: reservation,
+              order: existingOrder
+            });
+          }
+          // Nếu đã có payment completed thì không thêm vào result (ẩn đi)
+        }
       } else {
-        // Reservation chưa có order
-        return {
+        // Reservation chưa có order - hiển thị trong danh sách chờ tạo order
+        result.push({
           reservation: reservation,
           order: null
-        };
+        });
       }
-    });
+    }
     
     res.json({
       success: true,
