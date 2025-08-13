@@ -1,13 +1,13 @@
-const API_BASE_URL = 'http://localhost:3000/api/auth';
+const API_BASE_URL = "http://localhost:3000/api/auth";
 
 export const authService = {
   // Đăng nhập
   async login(email, password) {
     try {
       const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
@@ -15,7 +15,7 @@ export const authService = {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Đăng nhập thất bại');
+        throw new Error(data.message || "Đăng nhập thất bại");
       }
 
       return data;
@@ -28,17 +28,17 @@ export const authService = {
   async getProfile(token) {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Không thể lấy thông tin profile');
+        throw new Error(data.message || "Không thể lấy thông tin profile");
       }
 
       return data;
@@ -49,7 +49,7 @@ export const authService = {
 
   // Đăng xuất
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  }
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  },
 };

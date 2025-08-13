@@ -4,23 +4,6 @@ import axios from "axios";
 import { message } from "antd";
 
 const TableGrid = ({ table, onAssigned, selectedDate, selectedTime }) => {
-  const [reservation, setReservation] = useState(null);
-  useEffect(() => {
-    const fetchReservation = async () => {
-      if (table.reservationId) {
-        try {
-          const res = await axios.get(
-            `http://localhost:3000/api/v1/reservations/${table.reservationId}`
-          );
-          setReservation(res.data.reservation);
-        } catch (error) {
-          console.error("Failed to fetch reservation:", error);
-        }
-      }
-    };
-    fetchReservation();
-  }, [table.reservationId]);
-
   const [{ isOver, canDrop }, dropRef] = useDrop(() => ({
     accept: "reservation",
     canDrop: (item, monitor) => {
@@ -29,15 +12,22 @@ const TableGrid = ({ table, onAssigned, selectedDate, selectedTime }) => {
       const [hours, minutes] = selectedTime.split(":");
       slotTime.setUTCHours(hours);
       slotTime.setUTCMinutes(minutes);
+      const hasCapacity = (Number(table.capacity) || 0) >= item.quantity;
 
-      return (
-        reservationTime.getUTCHours() === slotTime.getUTCHours() &&
-        reservationTime.getUTCMinutes() === slotTime.getUTCMinutes()
-      );
+      const isAvailable =
+        table.status === "Available" || table.status === "Pending";
+
+      const now = new Date();
+      const isPastCheckIn = now > reservationTime;
+
+      return hasCapacity && isAvailable && !isPastCheckIn;
     },
     drop: async (item, monitor) => {
       if (!monitor.canDrop()) {
-        console.log("Cannot drop: Wrong time slot");
+        console.log("Wrong time or table capacity mismatch");
+        message.error(
+          "Cannot assign table: Wrong time, not enough capacity, or past check-in time."
+        );
         return;
       }
       const slotTime = new Date(selectedDate);
@@ -83,16 +73,12 @@ const TableGrid = ({ table, onAssigned, selectedDate, selectedTime }) => {
             : "bg-red-500"
         } text-white text-center`}
       >
+        <p className="text-sm font-bold text-start">
+          {table.assignedReservation?.customerName}
+        </p>
         <h3 className="text-lg font-semibold">{table.name}</h3>
         <p className="text-sm">{table.status}</p>
         <p className="text-sm">{table.capacity} Slots</p>
-        {reservation && (
-          <div className="mt-2 text-sm bg-gray-200 text-gray-800 p-2 rounded">
-            <p>Customer: {reservation.customerId.name}</p>
-            <p>Time: {reservation.timeStr}</p>
-            <p>Quantity: {reservation.quantity} people</p>
-          </div>
-        )}
       </div>
     </>
   );

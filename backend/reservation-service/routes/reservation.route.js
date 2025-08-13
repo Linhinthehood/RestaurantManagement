@@ -9,7 +9,7 @@ const route = express.Router();
 route.post(
   "/",
   protect, // Thêm middleware xác thực token trước
-  authorize("Manager", "Receptionist"),
+  authorize("Manager", "Receptionist", "Waiter"),
   reservationMiddleware.validateReservationInput,
   reservationMiddleware.validateReservationTime,
   reservationController.createReservation
@@ -21,7 +21,12 @@ route.put(
   reservationController.assignTable
 );
 route.put("/:id/unassign-table", reservationController.unassignTable);
-route.put("/:id/checkin", protect, reservationController.checkInReservation);
+route.put(
+  "/:id/checkin",
+  protect,
+  authorize("Manager", "Receptionist", "Waiter"),
+  reservationController.checkInReservation
+);
 route.get(
   "/",
   //  protect,

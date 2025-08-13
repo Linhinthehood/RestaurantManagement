@@ -210,26 +210,44 @@ const reservationService = {
     return reservations;
   },
 
-  getAvailableTables: async (
-    dateStr,
-    timeStr,
-    quantity,
-    onlyAvailable = false
-  ) => {
+  getAvailableTables: async (dateStr, timeStr) => {
     if (!dateStr || !timeStr) {
       throw new Error("Date and time are required");
-    }
-    if (!quantity || isNaN(quantity)) {
-      throw new Error("Invalid quantity provided");
     }
     const checkIn = parseDateTime(dateStr, timeStr);
     const expectedCheckOutTime = new Date(
       checkIn.getTime() + 2 * 60 * 60 * 1000
     );
-    const conflictingHistories = await tableHistoryModel.find({
-      checkInTime: { $lte: expectedCheckOutTime },
-      expectedCheckOutTime: { $gte: checkIn },
+    const conflictingHistories = await tableHistoryModel
+      .find({
+        checkInTime: { $lte: expectedCheckOutTime },
+        expectedCheckOutTime: { $gte: checkIn },
+      })
+      .select("tableId tableStatus reservationId");
+
+    const reservationIds = conflictingHistories
+      .map((h) => h.reservationId)
+      .filter(Boolean);
+
+    const reservationsWithCustomer = await reservationModel
+      .find({
+        _id: { $in: reservationIds },
+      })
+      .populate("customerId");
+
+    const reservationMap = new Map();
+    reservationsWithCustomer.forEach((r) => {
+      const history = conflictingHistories.find((h) =>
+        h.reservationId.equals(r._id)
+      );
+      if (history) {
+        reservationMap.set(history.tableId.toString(), {
+          reservationId: r._id,
+          customerName: r.customerId?.name || "Walk-in Customer",
+        });
+      }
     });
+
     const tableStatusMap = new Map();
     conflictingHistories.forEach((h) => {
       tableStatusMap.set(h.tableId.toString(), h.tableStatus);
@@ -242,39 +260,71 @@ const reservationService = {
 
     const tablesWithStatus = allTables.map((table) => {
       const status = tableStatusMap.get(table._id.toString()) || "Available";
+      const assignedReservation = reservationMap.get(table._id.toString());
       return {
         ...table,
         status,
+        assignedReservation: assignedReservation || null,
       };
     });
 
-    if (onlyAvailable) {
-      return tablesWithStatus.filter(
-        (table) =>
-          (!quantity || table.capacity >= Number(quantity)) &&
-          table.status === "Available"
-      );
-    }
     return tablesWithStatus;
   },
 
   assignTable: async (reservationId, tableId, staffId) => {
-    const reservation = await reservationModel.findById(reservationId);
+    const reservation = await reservationModel
+      .findById(reservationId)
+      .populate("tableHistory");
     if (!reservation) throw new Error("Reservation not found");
     const checkInTime = new Date(reservation.checkInTime);
+    const now = new Date();
+
+    if (now > checkInTime) {
+      throw new Error(
+        "Cannot assign table to a reservation that is past its check-in time."
+      );
+    }
+
     const expectedCheckOutTime = new Date(
       checkInTime.getTime() + 2 * 60 * 60 * 1000
     );
 
+    // Gọi sang table-service để lấy thông tin bàn
+    let tableInfo = null;
+    try {
+      const res = await tableServiceApi.get(`/tables/${tableId}`);
+      tableInfo = res.data.table;
+      console.log("TableInfo: ", tableInfo);
+    } catch (e) {
+      console.error("Error fetching table info:", e.message);
+      throw new Error("Cannot fetch table info");
+    }
+
+    if (tableInfo.capacity < reservation.quantity) {
+      throw new Error(
+        `Table capacity (${tableInfo.capacity}) is not enough for this reservation (${reservation.quantity} people).`
+      );
+    }
+
     const isAlreadyAssigned = await tableHistoryModel.exists({
       tableId: tableId,
-      checkInTime: { $lte: expectedCheckOutTime },
-      expectedCheckOutTime: { $gte: checkInTime },
+      checkInTime: { $lt: expectedCheckOutTime },
+      expectedCheckOutTime: { $gt: checkInTime },
       tableStatus: { $in: ["Pending", "Occupied", "Unavailable"] },
     });
 
     if (isAlreadyAssigned) {
       throw new Error("Table already assigned during this time");
+    }
+
+    const isTableAlreadyInReservation = reservation.tableHistory.some(
+      (h) => h.tableId._id.toString() === tableId.toString()
+    );
+
+    if (isTableAlreadyInReservation) {
+      throw new Error(
+        `Table ${tableInfo.name} already assigned to this reservation`
+      );
     }
 
     const historyData = {
@@ -290,21 +340,10 @@ const reservationService = {
     }
     const history = await tableHistoryModel.create(historyData);
     reservation.tableHistory.push(history._id);
-    reservation.tableId = tableId;
     await reservation.save();
-
-    // Gọi sang table-service để lấy thông tin bàn
-    let tableInfo = null;
-    try {
-      const res = await tableServiceApi.get(`/tables/${tableId}`);
-      tableInfo = res.data;
-    } catch (e) {
-      console.error("Error fetching table info:", e.message);
-    }
-
     return {
       ...reservation.toObject(),
-      table: tableInfo, // Trả về thông tin bàn
+      newTable: tableInfo, // Trả về thông tin bàn
     };
   },
 
