@@ -6,7 +6,7 @@ services:
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${USER_DB}
       - JWT_SECRET_KEY=your_jwt_secret_key_here
-      - JWT_EXPIRE_TIME=7d
+      - JWT_EXPIRE_TIME=1d
       - NODE_ENV=development
     # depends_on:
     #   - mongo
@@ -31,6 +31,9 @@ services:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${FOOD_DB}
       - USER_SERVICE_URL=http://user-service:3001
       - NODE_ENV=development
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
     # depends_on:
     #   - mongo
 

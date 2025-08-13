@@ -1,11 +1,17 @@
 import User from "../models/user.js";
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
 // Helper function để tạo JWT token
 const generateToken = (userId, name, role) => {
   return jwt.sign(
-    { id: userId, name, role },
-    process.env.JWT_SECRET_KEY,
+    { 
+      id: userId, 
+      name, 
+      role,
+      nonce: crypto.randomBytes(16).toString('hex') // Thêm random string để token luôn khác nhau
+    },
+    process.env.JWT_SECRET_KEY || 'default-secret-key-for-development',
     { expiresIn: process.env.JWT_EXPIRE_TIME || '7d' }
   );
 };

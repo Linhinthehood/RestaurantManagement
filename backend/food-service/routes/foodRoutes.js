@@ -19,7 +19,7 @@ router.get('/:id', protect, requireMenuAccess, validateObjectId, foodController.
 
 // Protected routes - quản lý food (Manager, Chef)
 router.post('/', protect, requireFoodManagement, upload.single('image'), validateFoodData, foodController.createFood);
-router.put('/:id', protect, requireFoodManagement, validateObjectId, validateFoodData, foodController.updateFood);
+router.put('/:id', protect, requireFoodManagement, upload.single('image'), validateObjectId, validateFoodData, foodController.updateFood);
 router.delete('/:id', protect, requireFoodManagement, validateObjectId, foodController.deleteFood);
 
 module.exports = router; 

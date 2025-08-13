@@ -66,6 +66,94 @@ export const foodService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  // Create new food
+  createFood: async (foodData) => {
+    try {
+      const response = await foodAPI.post('/foods', foodData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Update food (supports both with and without image)
+  updateFood: async (foodId, foodData) => {
+    try {
+      const response = await foodAPI.put(`/foods/${foodId}`, foodData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Delete food
+  deleteFood: async (foodId) => {
+    try {
+      const response = await foodAPI.delete(`/foods/${foodId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get all categories
+  getAllCategories: async () => {
+    try {
+      const response = await foodAPI.get('/categories');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get category by ID
+  getCategoryById: async (categoryId) => {
+    try {
+      const response = await foodAPI.get(`/categories/${categoryId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Create new category
+  createCategory: async (categoryData) => {
+    try {
+      const response = await foodAPI.post('/categories', categoryData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Update category
+  updateCategory: async (categoryId, categoryData) => {
+    try {
+      const response = await foodAPI.put(`/categories/${categoryId}`, categoryData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Delete category
+  deleteCategory: async (categoryId) => {
+    try {
+      const response = await foodAPI.delete(`/categories/${categoryId}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 

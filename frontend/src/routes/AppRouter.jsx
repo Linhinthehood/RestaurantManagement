@@ -11,8 +11,7 @@ import PaymentPage from "../pages/payment/PaymentPage";
 import NotFoundPage from "../pages/not-found/NotFoundPage";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterUserPage from "../pages/manager/RegisterUserPage";
-import InventoryPage from "../pages/manager/InventoryPage";
-import ReportPage from "../pages/manager/ReportPage";
+import ManagerDashboard from "../pages/manager/ManagerDashboard";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -64,9 +63,8 @@ const AppRouter = () => {
         { path: "payment", element: <PaymentPage /> },
 
         // route này là cho manager nhé
+        { path: "manager", element: <ManagerDashboard /> },
         { path: "manager/register", element: <RegisterUserPage /> },
-        { path: "manager/inventory", element: <InventoryPage /> },
-        { path: "manager/reports", element: <ReportPage /> },
         
         // Catch-all route cho dashboard
         { path: "*", element: <Navigate to="/dashboard" replace /> },

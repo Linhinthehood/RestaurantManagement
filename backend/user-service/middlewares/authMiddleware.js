@@ -19,7 +19,7 @@ export const protect = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'default-secret-key-for-development');
     
     // Get user from token
     const user = await User.findById(decoded.id).select('-password');
@@ -98,7 +98,7 @@ export const optionalAuth = async (req, res, next) => {
     }
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || 'default-secret-key-for-development');
       const user = await User.findById(decoded.id).select('-password');
       
       if (user && user.status === 'Active') {

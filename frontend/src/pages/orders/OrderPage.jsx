@@ -346,7 +346,7 @@ const OrderPage = () => {
           </div>
         </div>
       )}
-      <div className="mb-6">
+      {/* <div className="mb-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Create & Manage Orders</h1>
@@ -365,7 +365,7 @@ const OrderPage = () => {
             Refresh
           </button>
         </div>
-      </div>
+      </div> */}
       {/* Arrived Reservations (no order yet) */}
       <div className="mb-8">
         <h2 className="text-lg font-semibold mb-4 text-blue-700 flex items-center"><Plus className="w-5 h-5 mr-2" />Reservations without orders</h2>

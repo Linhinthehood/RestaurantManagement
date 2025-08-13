@@ -3,6 +3,9 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
 require('dotenv').config();
 
+// Import raw-body for handling multipart requests
+const getRawBody = require('raw-body');
+
 const app = express();
 const PORT = 3000;
 
@@ -32,12 +35,19 @@ const proxyOptions = {
     // Log request headers
     console.log('Request Headers:', proxyReq.getHeaders());
     
-    // Handle body for POST/PUT requests
-    if (req.body && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH')) {
+    // Handle body for POST/PUT requests (only for JSON requests)
+    if (req.body && (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') && 
+        req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
       const bodyData = JSON.stringify(req.body);
       proxyReq.setHeader('Content-Type', 'application/json');
       proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
       proxyReq.write(bodyData);
+    }
+    
+    // For multipart/form-data, forward the raw body
+    if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data') && req.rawBody) {
+      console.log('Forwarding multipart body, length:', req.rawBody.length);
+      proxyReq.write(req.rawBody);
     }
   },
   onProxyRes: (proxyRes, req, res) => {
@@ -48,6 +58,29 @@ const proxyOptions = {
 // Parse JSON body for all routes
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Handle multipart/form-data for file uploads
+app.use(async (req, res, next) => {
+  if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+    try {
+      // Get raw body for multipart requests
+      const rawBody = await getRawBody(req, {
+        length: req.headers['content-length'],
+        limit: '10mb'
+      });
+      
+      // Store raw body for proxy to use
+      req.rawBody = rawBody;
+      console.log('Multipart request body captured, length:', rawBody.length);
+      next();
+    } catch (err) {
+      console.error('Error reading multipart body:', err);
+      next(err);
+    }
+  } else {
+    next();
+  }
+});
 
 // Proxy routes với cấu hình được cải thiện
 app.use('/api/auth', createProxyMiddleware({ 
