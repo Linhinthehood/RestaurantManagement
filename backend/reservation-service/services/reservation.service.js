@@ -401,6 +401,13 @@ const reservationService = {
     if (!reservation) {
       throw new Error("Reservation not found");
     }
+    const isAssignReservation = await reservationModel
+      .findById(reservationId)
+      .populate("tableHistory");
+    console.log(isAssignReservation);
+    if (!isAssignReservation) {
+      throw new Error("Reservation didn't assigned");
+    }
     (reservation.status = "Arrived"),
       reservation.statusHistory.push({
         status: "Arrived",

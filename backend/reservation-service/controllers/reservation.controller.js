@@ -153,6 +153,12 @@ const reservationController = {
           success: false,
         });
       }
+      if (error.message === "Reservation didn't assigned") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
       res.status(500).json({
         message: "Internal server error",
         success: false,
