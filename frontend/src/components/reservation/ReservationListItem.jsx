@@ -34,7 +34,7 @@ const ReservationListItem = ({ rsv }) => {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-gray-700 font-medium">
             <UserIcon className="h-5 w-5 text-blue-500" />
-            <span>{rsv.customerId.name}</span>
+            <span>{rsv.customerId?.name}</span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
             <ClockIcon className="h-4 w-4 text-green-500" />
