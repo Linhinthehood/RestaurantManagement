@@ -6,7 +6,7 @@ services:
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${USER_DB}
       - JWT_SECRET_KEY=your_jwt_secret_key_here
-      - JWT_EXPIRE_TIME=7d
+      - JWT_EXPIRE_TIME=1d
       - NODE_ENV=development
     # depends_on:
     #   - mongo
@@ -31,6 +31,9 @@ services:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${FOOD_DB}
       - USER_SERVICE_URL=http://user-service:3001
       - NODE_ENV=development
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
     # depends_on:
     #   - mongo
 
@@ -44,6 +47,7 @@ services:
       - TABLE_SERVICE_URL=http://table-service:3005
       - RESERVATION_SERVICE_URL=http://reservation-service:3002
       - FOOD_SERVICE_URL=http://food-service:3003
+      - PAYMENT_SERVICE_URL=http://payment-service:3006
       - NODE_ENV=development
     # depends_on:
     #   - mongo
@@ -65,9 +69,10 @@ services:
     ports:
       - "${PAYMENT_SERVICE_PORT}:${PAYMENT_SERVICE_PORT}"
     environment:
-      - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${PAYMENT_DB}
+      - MONGODB_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${PAYMENT_DB}
       - USER_SERVICE_URL=http://user-service:3001
-      - NODE_ENV=development
+      - ORDER_SERVICE_URL=http://order-service:3004
+      - RESERVATION_SERVICE_URL=http://reservation-service:3002
     # depends_on:
     #   - mongo
 
@@ -83,10 +88,3 @@ services:
       - table-service
       - payment-service
     restart: unless-stopped
-
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "${FRONTEND_PORT}:${FRONTEND_PORT}"
-  #   depends_on:
-  #     - api-gateway 
