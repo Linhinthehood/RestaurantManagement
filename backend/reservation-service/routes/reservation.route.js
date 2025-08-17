@@ -51,4 +51,12 @@ route.get(
 route.get("/:id", protect, reservationController.getReservationById);
 route.put("/:id/cancel", protect, reservationController.cancelReservation);
 
+// Route để cập nhật tableStatus khi payment hoàn thành
+route.patch(
+  "/:id/update-table-status",
+  protect,
+  authorize("Manager", "Receptionist", "Waiter"),
+  reservationController.updateTableStatus
+);
+
 export default route;

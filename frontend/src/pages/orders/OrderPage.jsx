@@ -87,7 +87,10 @@ const OrderPage = () => {
   }, [localError]);
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('en-US');
+    // Trừ đi 7 giờ để hiển thị đúng giờ check-in
+    const date = new Date(dateString);
+    date.setHours(date.getHours() - 7);
+    return date.toLocaleString('en-US');
   };
 
   const handleCreateOrder = async (reservation) => {

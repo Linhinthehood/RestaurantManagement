@@ -427,6 +427,33 @@ const reservationService = {
       .filter(Boolean);
     return tableIds;
   },
+
+  // Cập nhật tableStatus khi payment hoàn thành
+  updateTableStatus: async (reservationId, tableStatus) => {
+    const reservation = await reservationModel.findById(reservationId);
+    if (!reservation) {
+      throw new Error("Reservation not found");
+    }
+
+    // Tìm tableHistory active (có tableStatus là Pending hoặc Occupied)
+    const activeHistory = await tableHistoryModel.findOne({
+      reservationId,
+      tableStatus: { $in: ["Pending", "Occupied"] },
+    });
+
+    if (!activeHistory) {
+      throw new Error("No active table assignment found");
+    }
+
+    // Cập nhật tableStatus
+    activeHistory.tableStatus = tableStatus;
+    await activeHistory.save();
+
+    return {
+      reservation: reservation,
+      updatedTableHistory: activeHistory,
+    };
+  },
 };
 
 export default reservationService;

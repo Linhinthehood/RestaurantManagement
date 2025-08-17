@@ -303,6 +303,47 @@ const reservationController = {
         .json({ message: "Internal server error", success: false });
     }
   },
+
+  // Cập nhật tableStatus khi payment hoàn thành
+  updateTableStatus: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { tableStatus } = req.body;
+      
+      if (!tableStatus || !['Available', 'Pending', 'Occupied', 'Unavailable'].includes(tableStatus)) {
+        return res.status(400).json({
+          message: "Invalid table status",
+          success: false,
+        });
+      }
+
+      const result = await reservationService.updateTableStatus(id, tableStatus);
+      
+      res.status(200).json({
+        message: "Table status updated successfully",
+        result: result,
+        success: true,
+      });
+    } catch (error) {
+      console.error("Error updating table status:", error);
+      if (error.message === "Reservation not found") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
+      if (error.message === "No active table assignment found") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
+      res.status(500).json({
+        message: "Internal server error",
+        success: false,
+      });
+    }
+  },
 };
 
 export default reservationController;

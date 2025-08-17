@@ -113,6 +113,26 @@ class ExternalService {
       return null;
     }
   }
+
+  // Cập nhật tableStatus thành Available khi payment hoàn thành
+  static async updateTableStatusToAvailable(reservationId, token) {
+    try {
+      console.log(`Updating table status to Available for reservation: ${reservationId}`);
+      const response = await axios.patch(`${RESERVATION_SERVICE_URL}/api/v1/reservations/${reservationId}/update-table-status`, {
+        tableStatus: 'Available'
+      }, {
+        headers: {
+          Authorization: token
+        }
+      });
+      console.log('Table status updated successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating table status:', error.message);
+      console.error('Full error:', error.response?.data || error);
+      return null;
+    }
+  }
 }
 
 module.exports = ExternalService;

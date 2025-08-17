@@ -150,28 +150,58 @@ PaymentSchema.pre('save', function(next) {
 
 // Hàm tạo mã payment tự động
 async function generatePaymentCode() {
-  const today = new Date();
-  const day = String(today.getDate()).padStart(2, '0');
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const year = String(today.getFullYear()).slice(-2);
-  const datePrefix = `${day}${month}${year}`;
+  let attempts = 0;
+  const maxAttempts = 10;
   
-  // Tìm payment cuối cùng trong ngày
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-  
-  const lastPayment = await mongoose.model('Payment').findOne({
-    createdAt: { $gte: startOfDay, $lt: endOfDay }
-  }).sort({ createdAt: -1 });
-  
-  let sequence = 1;
-  if (lastPayment && lastPayment.paymentCode) {
-    const lastSequence = parseInt(lastPayment.paymentCode.slice(-4));
-    sequence = lastSequence + 1;
+  while (attempts < maxAttempts) {
+    try {
+      const today = new Date();
+      const day = String(today.getDate()).padStart(2, '0');
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const year = String(today.getFullYear()).slice(-2);
+      const datePrefix = `${day}${month}${year}`;
+      
+      // Tìm payment cuối cùng trong ngày
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      
+      const lastPayment = await mongoose.model('Payment').findOne({
+        createdAt: { $gte: startOfDay, $lt: endOfDay }
+      }).sort({ createdAt: -1 });
+      
+      let sequence = 1;
+      if (lastPayment && lastPayment.paymentCode) {
+        const lastSequence = parseInt(lastPayment.paymentCode.slice(-4));
+        sequence = lastSequence + 1;
+      }
+      
+      const sequenceStr = String(sequence).padStart(4, '0');
+      const paymentCode = `${datePrefix}${sequenceStr}`;
+      
+      // Kiểm tra xem paymentCode đã tồn tại chưa
+      const existingPayment = await mongoose.model('Payment').findOne({ paymentCode });
+      if (!existingPayment) {
+        return paymentCode;
+      }
+      
+      // Nếu đã tồn tại, tăng sequence và thử lại
+      attempts++;
+      
+    } catch (err) {
+      console.error('Error generating payment code:', err);
+      attempts++;
+      
+      // Nếu có lỗi, thử tạo code với timestamp để đảm bảo unique
+      if (attempts >= maxAttempts) {
+        const timestamp = Date.now().toString().slice(-6);
+        return `FALLBACK${timestamp}`;
+      }
+    }
   }
   
-  const sequenceStr = String(sequence).padStart(4, '0');
-  return `${datePrefix}${sequenceStr}`;
+  // Fallback: sử dụng timestamp nếu tất cả attempts đều thất bại
+  const timestamp = Date.now().toString().slice(-8);
+  return `FALLBACK${timestamp}`;
 }
 
 // Index để tối ưu query
