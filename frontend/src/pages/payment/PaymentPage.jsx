@@ -319,6 +319,44 @@ const PaymentPage = () => {
                 </div>
               </div>
 
+              {/* Payment Handler Info */}
+              {payment?.createdByUser && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-medium mb-3 flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Payment Handler Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Handler:</span>
+                      <span className="ml-2 font-medium">{payment.createdByUser.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Role:</span>
+                      <span className="ml-2 font-medium">{payment.createdByUser.role}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Time Information */}
+              <div className="mb-6 p-4 bg-green-50 rounded-lg">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Time Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Check-in:</span>
+                    <span className="ml-2 font-medium">{formatDate(reservationInfo?.checkInTime)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Completed Time:</span>
+                    <span className="ml-2 font-medium">{formatDate(payment?.createdAt || order?.createdAt)}</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Order Items */}
               <div className="mb-6">
                 <h3 className="font-medium mb-3">Food Items</h3>
@@ -495,6 +533,12 @@ const PaymentPage = () => {
                          payment.status === 'Pending' ? 'Pending' : 'Cancelled'}
                       </span>
                     </div>
+                    {payment.createdByUser && (
+                      <div className="flex justify-between mb-1">
+                        <span>Handled By:</span>
+                        <span className="font-medium">{payment.createdByUser.name}</span>
+                      </div>
+                    )}
                   </>
                 )}
                 {order && (
