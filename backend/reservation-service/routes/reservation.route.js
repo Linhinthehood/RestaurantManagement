@@ -8,8 +8,8 @@ const route = express.Router();
 
 route.post(
   "/",
-  protect, // Thêm middleware xác thực token trước
-  authorize("Manager", "Receptionist", "Waiter"),
+  // protect, // Thêm middleware xác thực token trước
+  // authorize("Manager", "Receptionist", "Waiter"),
   reservationMiddleware.validateReservationInput,
   reservationMiddleware.validateReservationTime,
   reservationController.createReservation
@@ -39,7 +39,7 @@ route.get(
 );
 route.get(
   "/customer/:phone",
-  protect,
+  // protect,
   reservationMiddleware.validatePhoneNumber,
   reservationController.getReservationByPhone
 );

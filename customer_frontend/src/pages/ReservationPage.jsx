@@ -6,28 +6,53 @@ import Input from "../components/Input";
 import Button from "../components/Button";
 import GhostButton from "../components/GhostButton";
 import TextArea from "../components/TextArea";
+import { createReservation } from "../services/reservationApi";
+import { message } from "antd";
 
 const ReservationPage = () => {
   const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    date: "",
-    time: "",
-    partySize: 2,
+    customerName: "",
+    customerPhone: "",
+    customerEmail: "",
+    dateStr: "",
+    timeStr: "",
+    quantity: 2,
     note: "",
   });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const navigate = useNavigate();
 
-  const onChange = (e) =>
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({
+      ...f,
+      [name]: name === "quantity" ? parseInt(value) : value,
+    }));
+  };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    // UI-only: show success panel. Replace with backend call later.
-    setSubmitted(true);
-    // Example next step after integrating BE: navigate(`/history?phone=${form.phone}`)
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await createReservation(form);
+      message.success(res.message);
+      setSubmitted(true);
+    } catch (e) {
+      message.error(
+        e.response?.data.message ||
+          "An error occurred while booking a table. Please try again."
+      );
+      setError(
+        e.response?.data.message ||
+          "An error occurred while booking a table. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -46,72 +71,72 @@ const ReservationPage = () => {
 
               <form className="mt-6 grid gap-4" onSubmit={onSubmit}>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="name">Full name</Label>
+                  <Label htmlFor="customerName">Full name</Label>
                   <Input
-                    id="name"
-                    name="name"
+                    id="customerName"
+                    name="customerName"
                     placeholder="Nguyễn Văn A"
-                    value={form.name}
+                    value={form.customerName}
                     onChange={onChange}
                     required
                   />
                 </div>
                 <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-4">
                   <div className="grid gap-1.5">
-                    <Label htmlFor="phone">Phone number</Label>
+                    <Label htmlFor="customerPhone">Phone number</Label>
                     <Input
-                      id="phone"
-                      name="phone"
+                      id="customerPhone"
+                      name="customerPhone"
                       type="tel"
                       placeholder="090xxxxxxx"
-                      value={form.phone}
+                      value={form.customerPhone}
                       onChange={onChange}
                       required
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="customerEmail">Email</Label>
                     <Input
-                      id="email"
-                      name="email"
-                      type="email"
+                      id="customerEmail"
+                      name="customerEmail"
+                      type="customerEmail"
                       placeholder="ban@email.com"
-                      value={form.email}
+                      value={form.customerEmail}
                       onChange={onChange}
                     />
                   </div>
                 </div>
                 <div className="grid gap-1.5 sm:grid-cols-3 sm:gap-4">
                   <div className="grid gap-1.5">
-                    <Label htmlFor="date">Date</Label>
+                    <Label htmlFor="dateStr">Date</Label>
                     <Input
-                      id="date"
-                      name="date"
+                      id="dateStr"
+                      name="dateStr"
                       type="date"
-                      value={form.date}
+                      value={form.dateStr}
                       onChange={onChange}
                       required
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor="time">Time</Label>
+                    <Label htmlFor="timeStr">Time</Label>
                     <Input
-                      id="time"
-                      name="time"
+                      id="timeStr"
+                      name="timeStr"
                       type="time"
-                      value={form.time}
+                      value={form.timeStr}
                       onChange={onChange}
                       required
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor="partySize">Number of guests</Label>
+                    <Label htmlFor="quantity">Number of guests</Label>
                     <Input
-                      id="partySize"
-                      name="partySize"
+                      id="quantity"
+                      name="quantity"
                       type="number"
                       min={1}
-                      value={form.partySize}
+                      value={form.quantity}
                       onChange={onChange}
                       required
                     />
@@ -127,10 +152,16 @@ const ReservationPage = () => {
                     onChange={onChange}
                   />
                 </div>
-
+                {error && (
+                  <div className="ml-2 text-sm text-rose-600">{error}</div>
+                )}
                 <div className="mt-2 flex items-center gap-3">
-                  <Button type="submit" className="px-6 py-3">
-                    Book a table
+                  <Button
+                    type="submit"
+                    className="px-6 py-3"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Waiting for booking" : "Book a table"}
                   </Button>
                   <GhostButton as="link" to="/history">
                     View history
