@@ -168,13 +168,22 @@ const PaymentPage = () => {
     setProcessingPayment(true);
     try {
       // Update payment status to Completed
-      await paymentService.updatePaymentStatus(payment._id, 'Completed');
+      const paymentResponse = await paymentService.updatePaymentStatus(payment._id, 'Completed');
       
-      // Show success message and navigate
-      setSuccess('Payment completed successfully!');
-      setTimeout(() => {
-        navigate('/dashboard/orders');
-      }, 1500);
+      if (paymentResponse.success) {
+        // Payment completed successfully
+        setSuccess('Payment completed successfully!');
+        
+        // Log success for debugging
+        console.log('Payment completed:', paymentResponse);
+        
+        // Navigate back to orders after delay
+        setTimeout(() => {
+          navigate('/dashboard/orders');
+        }, 1500);
+      } else {
+        throw new Error(paymentResponse.message || 'Payment update failed');
+      }
     } catch (err) {
       console.error('Payment failed:', err);
       setError('Payment failed. Please try again.');

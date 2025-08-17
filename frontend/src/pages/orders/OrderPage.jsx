@@ -244,15 +244,15 @@ const OrderPage = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Fixed Notifications */}
       {(error || localError) && (
-        <div className="fixed top-6 right-6 z-50 bg-white border-l-4 border-red-500 rounded-lg shadow-xl px-6 py-4 max-w-md transform transition-all duration-300 translate-x-0">
+        <div className="fixed top-6 right-6 z-50 bg-white/90 backdrop-blur-xl border border-red-200/50 rounded-2xl shadow-2xl px-6 py-4 max-w-md transform transition-all duration-300 translate-x-0">
           <div className="flex items-start">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-red-600" />
+              <div className="w-10 h-10 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center shadow-lg">
+                <AlertCircle className="w-6 h-6 text-red-600" />
               </div>
             </div>
-            <div className="ml-3 flex-1">
-              <h4 className="text-sm font-semibold text-gray-900 mb-1">Error</h4>
+            <div className="ml-4 flex-1">
+              <h4 className="text-base font-semibold text-gray-900 mb-1">Error</h4>
               <p className="text-sm text-gray-700 leading-relaxed">{error || localError}</p>
             </div>
             <button 
@@ -260,7 +260,7 @@ const OrderPage = () => {
                 if (error) dispatch(clearError());
                 if (localError) setLocalError(null);
               }}
-              className="ml-3 flex-shrink-0 w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+              className="ml-4 flex-shrink-0 w-8 h-8 bg-gray-100/80 hover:bg-gray-200/80 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all duration-200 backdrop-blur-sm"
             >
               ×
             </button>
@@ -268,15 +268,15 @@ const OrderPage = () => {
         </div>
       )}
       {(success || localSuccess) && (
-        <div className="fixed top-6 right-6 z-50 bg-white border-l-4 border-green-500 rounded-lg shadow-xl px-6 py-4 max-w-md transform transition-all duration-300 translate-x-0">
+        <div className="fixed top-6 right-6 z-50 bg-white/90 backdrop-blur-xl border border-green-200/50 rounded-2xl shadow-2xl px-6 py-4 max-w-md transform transition-all duration-300 translate-x-0">
           <div className="flex items-start">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center shadow-lg">
+                <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
             </div>
-            <div className="ml-3 flex-1">
-              <h4 className="text-sm font-semibold text-gray-900 mb-1">Success</h4>
+            <div className="ml-4 flex-1">
+              <h4 className="text-base font-semibold text-gray-900 mb-1">Success</h4>
               <p className="text-sm text-gray-700 leading-relaxed">{success || localSuccess}</p>
             </div>
             <button 
@@ -284,7 +284,7 @@ const OrderPage = () => {
                 if (success) dispatch(clearSuccess());
                 if (localSuccess) setLocalSuccess(null);
               }}
-              className="ml-3 flex-shrink-0 w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+              className="ml-4 flex-shrink-0 w-8 h-8 bg-gray-100/80 hover:bg-gray-200/80 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all duration-200 backdrop-blur-sm"
             >
               ×
             </button>
@@ -294,33 +294,34 @@ const OrderPage = () => {
 
       {/* Confirmation Modal */}
       {showConfirm && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100">
+        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          {/* Glass morphism modal */}
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border border-white/20 animate-in zoom-in-95 duration-300">
             {/* Header with icon */}
-            <div className="p-6 pb-4">
-              <div className={`flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full ${
-                showConfirm.type === 'createOrder' ? 'bg-blue-100' :
-                showConfirm.type === 'closeOrder' ? 'bg-orange-100' :
-                'bg-green-100'
+            <div className="p-8 pb-6">
+              <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full shadow-lg animate-in zoom-in-95 duration-500 delay-200 ${
+                showConfirm.type === 'createOrder' ? 'bg-gradient-to-br from-blue-100 to-blue-200' :
+                showConfirm.type === 'closeOrder' ? 'bg-gradient-to-br from-orange-100 to-orange-200' :
+                'bg-gradient-to-br from-green-100 to-green-200'
               }`}>
-                {showConfirm.type === 'createOrder' && <Plus className="w-8 h-8 text-blue-600" />}
-                {showConfirm.type === 'closeOrder' && <CheckCircle className="w-8 h-8 text-orange-600" />}
-                {showConfirm.type === 'createPayment' && <CreditCard className="w-8 h-8 text-green-600" />}
+                {showConfirm.type === 'createOrder' && <Plus className="w-10 h-10 text-blue-600" />}
+                {showConfirm.type === 'closeOrder' && <CheckCircle className="w-10 h-10 text-orange-600" />}
+                {showConfirm.type === 'createPayment' && <CreditCard className="w-10 h-10 text-green-600" />}
               </div>
-              <h3 className="text-xl font-semibold text-center text-gray-900 mb-2">
+              <h3 className="text-2xl font-bold text-center text-gray-900 mb-3 animate-in slide-in-from-top-4 duration-500 delay-300">
                 {showConfirm.type === 'createOrder' && 'Create Order'}
                 {showConfirm.type === 'closeOrder' && 'Close Order'}
                 {showConfirm.type === 'createPayment' && 'Create Payment'}
               </h3>
-              <p className="text-gray-600 text-center leading-relaxed">{showConfirm.message}</p>
+              <p className="text-gray-600 text-center leading-relaxed text-lg animate-in slide-in-from-top-4 duration-500 delay-400">{showConfirm.message}</p>
             </div>
             
             {/* Action buttons */}
-            <div className="px-6 pb-6">
-              <div className="flex gap-3">
+            <div className="px-8 pb-8 animate-in slide-in-from-bottom-4 duration-500 delay-500">
+              <div className="flex gap-4">
                 <button
                   onClick={() => setShowConfirm(null)}
-                  className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                  className="flex-1 px-6 py-4 text-gray-700 bg-gray-100/80 backdrop-blur-sm rounded-2xl hover:bg-gray-200/80 transition-all duration-200 font-semibold text-lg border border-gray-200/50 hover:shadow-lg transform hover:scale-105"
                 >
                   Cancel
                 </button>
@@ -334,10 +335,10 @@ const OrderPage = () => {
                       confirmCreatePayment(showConfirm.reservation);
                     }
                   }}
-                  className={`flex-1 px-4 py-3 text-white rounded-xl font-medium transition-colors ${
-                    showConfirm.type === 'createOrder' ? 'bg-blue-600 hover:bg-blue-700' :
-                    showConfirm.type === 'closeOrder' ? 'bg-orange-600 hover:bg-orange-700' :
-                    'bg-green-600 hover:bg-green-700'
+                  className={`flex-1 px-6 py-4 text-white rounded-2xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 ${
+                    showConfirm.type === 'createOrder' ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700' :
+                    showConfirm.type === 'closeOrder' ? 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700' :
+                    'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
                   }`}
                 >
                   {showConfirm.type === 'createOrder' && 'Create Order'}
