@@ -42,10 +42,10 @@ export const reservationService = {
     const response = await reservationAPI.get("/reservations");
     return response.data;
   },
-  checkInReservation: async (_id) => {
-    console.log("ID của reservation:", _id);
+  checkInReservation: async (id) => {
+    console.log("ID của reservation:", id);
     const response = await reservationAPI.put(
-      `/reservations/${_id}/checkin`,
+      `/reservations/${id}/checkin`,
       {}
     );
     return response.data;

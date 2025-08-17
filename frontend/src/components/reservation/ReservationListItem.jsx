@@ -3,6 +3,7 @@ import { useDrag } from "react-dnd";
 import { UserIcon, ClockIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { Button, message } from "antd";
 import axios from "axios";
+import reservationService from "../../services/reservationService";
 
 const ReservationListItem = ({ rsv, onUnassigned }) => {
   const [{ isDragging }, dragRef] = useDrag(() => ({
@@ -32,12 +33,10 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
     }
   };
   const handleCheckIn = async () => {
-    console.log("Button has been clicked!");
     try {
-      console.log("-----------------------------------------");
       const res = await reservationService.checkInReservation(rsv._id);
       console.log("Day la cho toi test: ", res);
-      message.success("Check-in successfully");
+      message.success(res.message);
       onUnassigned();
     } catch (err) {
       message.error(err.response?.data?.message || "Failed to check-in");
