@@ -29,7 +29,7 @@ const PublicRoute = ({ children }) => {
 
 const AppRouter = () => {
   const { user } = useSelector((state) => state.user);
-  const role = user?.role?.toLowerCase();
+  const role = user?.role; // Không convert về lowercase nữa
   const allowedRoutes = roleConfig[role] || [];
 
   const routes = useRoutes([

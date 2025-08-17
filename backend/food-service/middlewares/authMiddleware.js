@@ -136,9 +136,9 @@ const optionalAuth = async (req, res, next) => {
   }
 };
 
-// Middleware kiểm tra quyền quản lý food (Manager, Chef)
+// Middleware kiểm tra quyền quản lý food (Manager, Chef, Waiter)
 const requireFoodManagement = (req, res, next) => {
-  return authorize('Manager', 'Chef')(req, res, next);
+  return authorize('Manager', 'Chef', 'Waiter')(req, res, next);
 };
 
 // Middleware kiểm tra quyền xem menu (tất cả role)
