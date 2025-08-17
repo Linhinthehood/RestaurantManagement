@@ -99,7 +99,7 @@ export default function RegisterUserPage() {
         role: form.role.value,
       };
       const res = await axios.post(
-        "http://localhost:4000/api/auth/register",
+        "http://localhost:3000/api/auth/register",
         payload
       );
       setMessage(res.data.message);

@@ -5,6 +5,7 @@ const USER_SERVICE_URL = process.env.USER_SERVICE_URL ;
 const RESERVATION_SERVICE_URL = process.env.RESERVATION_SERVICE_URL ;
 const FOOD_SERVICE_URL = process.env.FOOD_SERVICE_URL ;
 const TABLE_SERVICE_URL = process.env.TABLE_SERVICE_URL ;
+const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL;
 
 class ExternalService {
   // Lấy thông tin user từ user-service
@@ -177,6 +178,44 @@ class ExternalService {
       console.error('Error fetching arrived reservations:', error.message);
       console.error('Full error:', error.response?.data || error);
       return [];
+    }
+  }
+
+  // Lấy payments theo reservationId từ payment-service
+  static async getPaymentsByReservationId(reservationId, token) {
+    try {
+      console.log(`Fetching payments from: ${PAYMENT_SERVICE_URL}/api/payments/by-reservation/${reservationId}`);
+      const response = await axios.get(`${PAYMENT_SERVICE_URL}/api/payments/by-reservation/${reservationId}`, {
+        headers: {
+          Authorization: token
+        }
+      });
+      console.log('Payments data received:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching payments:', error.message);
+      console.error('Full error:', error.response?.data || error);
+      return null;
+    }
+  }
+
+  // Kiểm tra xem reservation có payment completed không
+  static async hasCompletedPayment(reservationId, token) {
+    try {
+      const paymentsResponse = await this.getPaymentsByReservationId(reservationId, token);
+      if (!paymentsResponse || !paymentsResponse.success || !paymentsResponse.data) {
+        return false;
+      }
+      
+      // Kiểm tra xem có payment nào có status 'Completed' không
+      const payments = Array.isArray(paymentsResponse.data) ? paymentsResponse.data : [paymentsResponse.data];
+      const hasCompleted = payments.some(payment => payment.status === 'Completed');
+      
+      console.log(`Reservation ${reservationId} has completed payment:`, hasCompleted);
+      return hasCompleted;
+    } catch (error) {
+      console.error('Error checking completed payment:', error.message);
+      return false;
     }
   }
 }

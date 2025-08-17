@@ -69,6 +69,16 @@ export const orderService = {
       throw error;
     }
   },
+
+  updateOrderStatus: async (orderId, status) => {
+    try {
+      const response = await orderAPI.patch(`/orders/${orderId}/status`, { orderStatus: status });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
+    }
+  },
 };
 
 // Order Item Service
@@ -83,7 +93,11 @@ export const orderItemService = {
       });
       return response.data;
     } catch (error) {
-      console.error("Error creating order item:", error);
+      // Handle specific error for insufficient quantity
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      }
+      console.error('Error creating order item:', error);
       throw error;
     }
   },
@@ -91,24 +105,10 @@ export const orderItemService = {
   // Get all order items for kitchen
   getAllOrderItems: async () => {
     try {
-      console.log("orderService - getAllOrderItems: Making API call");
-      const response = await orderAPI.get("/order-items");
-      console.log("orderService - getAllOrderItems: Response:", response);
-      console.log(
-        "orderService - getAllOrderItems: Response.data:",
-        response.data
-      );
-      console.log(
-        "orderService - getAllOrderItems: Response.data type:",
-        typeof response.data
-      );
-      console.log(
-        "orderService - getAllOrderItems: Response.data length:",
-        Array.isArray(response.data) ? response.data.length : "not array"
-      );
+      const response = await orderAPI.get('/order-items');
       return response.data;
     } catch (error) {
-      console.error("orderService - getAllOrderItems: Error:", error);
+      console.error('Error fetching order items:', error);
       throw error;
     }
   },
@@ -127,19 +127,10 @@ export const orderItemService = {
   // Update order item status
   updateOrderItemStatus: async (id, status) => {
     try {
-      console.log(
-        "orderService - updateOrderItemStatus: Making API call with id:",
-        id,
-        "status:",
-        status
-      );
-      const response = await orderAPI.patch(`/order-items/${id}/status`, {
-        status,
-      });
-      console.log("orderService - updateOrderItemStatus: Response:", response);
+      const response = await orderAPI.patch(`/order-items/${id}/status`, { status });
       return response.data;
     } catch (error) {
-      console.error("orderService - updateOrderItemStatus: Error:", error);
+      console.error('Error updating order item status:', error);
       throw error;
     }
   },

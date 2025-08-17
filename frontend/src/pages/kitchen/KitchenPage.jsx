@@ -61,17 +61,15 @@ const KitchenPage = () => {
     }
   }, [error, dispatch]);
 
-  // Filter order items based on selected status
+  // Filter order items based on selected status and exclude Served and Cancelled items
   const filteredOrderItems = selectedStatus === "all" 
-    ? orderItems 
-    : orderItems.filter(item => item.status === selectedStatus);
+    ? orderItems.filter(item => item.status !== 'Served' && item.status !== 'Cancelled')
+    : orderItems.filter(item => item.status === selectedStatus && item.status !== 'Served' && item.status !== 'Cancelled');
 
-
-
-  // Sort order items by priority (Pending first, then by creation time)
+  // Sort order items by status priority, then by category priority, then by creation time
   const sortedOrderItems = [...filteredOrderItems].sort((a, b) => {
-    // Priority order: Pending > Preparing > Ready_to_serve > Served > Cancelled
-    const priority = {
+    // Status priority order: Pending > Preparing > Ready_to_serve > Served > Cancelled
+    const statusPriority = {
       Pending: 1,
       Preparing: 2,
       Ready_to_serve: 3,
@@ -79,10 +77,24 @@ const KitchenPage = () => {
       Cancelled: 5
     };
 
-    const priorityDiff = priority[a.status] - priority[b.status];
-    if (priorityDiff !== 0) return priorityDiff;
+    // Category priority order: High > Medium > Low
+    const categoryPriority = {
+      High: 1,
+      Medium: 2,
+      Low: 3
+    };
 
-    // If same priority, sort by creation time (oldest first)
+    // First, sort by status priority
+    const statusDiff = statusPriority[a.status] - statusPriority[b.status];
+    if (statusDiff !== 0) return statusDiff;
+
+    // If same status, sort by category priority
+    const aCategoryPriority = categoryPriority[a.foodId?.categoryId?.priority] || 4; // Default to lowest if no priority
+    const bCategoryPriority = categoryPriority[b.foodId?.categoryId?.priority] || 4;
+    const categoryDiff = aCategoryPriority - bCategoryPriority;
+    if (categoryDiff !== 0) return categoryDiff;
+
+    // If same category priority, sort by creation time (oldest first)
     return new Date(a.createdAt) - new Date(b.createdAt);
   });
 
@@ -105,10 +117,10 @@ const KitchenPage = () => {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+      {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Kitchen Management</h1>
-          <p className="text-gray-600 mt-2">Quản lý và theo dõi các đơn hàng trong bếp</p>
+          <p className="text-gray-600 mt-2">Manage and track orders in the kitchen</p>
         </div>
         
         <div className="mt-4 sm:mt-0 flex items-center space-x-4">
@@ -133,7 +145,7 @@ const KitchenPage = () => {
             <span className="text-sm text-gray-600">Auto refresh</span>
           </label>
         </div>
-      </div>
+      </div> */}
 
       {/* Alerts */}
       {error && (

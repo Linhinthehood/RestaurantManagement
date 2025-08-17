@@ -6,7 +6,6 @@ const Sidebar = () => {
   const { user } = useSelector((state) => state.user);
   const role = user?.role?.toLowerCase();
   const menuItems = roleConfig[role] || [];
-
   return (
     <div className="w-64 bg-gray-800 text-white h-full p-4">
       <h2 className="text-xl font-bold mb-6">Restaurant System</h2>

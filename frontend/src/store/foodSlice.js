@@ -61,7 +61,9 @@ const foodSlice = createSlice({
         state.foods = action.payload.map(food => ({
           ...food,
           category: food.categoryId,
-          price: food.pricePerUnit && food.pricePerUnit.$numberDecimal ? Number(food.pricePerUnit.$numberDecimal) : 0
+          price: food.pricePerUnit && food.pricePerUnit.$numberDecimal ? Number(food.pricePerUnit.$numberDecimal) : 0,
+          quantity: food.quantity || 0,
+          status: food.status || 'Available'
         }));
         // Extract unique categories from foods
         const categoryMap = new Map();
