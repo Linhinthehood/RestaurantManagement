@@ -5,6 +5,7 @@ import MenuPage from "../pages/menu/MenuPage";
 import PaymentPage from "../pages/payment/PaymentPage";
 import RegisterUserPage from "../pages/manager/RegisterUserPage";
 import ManagerDashboard from "../pages/manager/ManagerDashboard";
+import CRUDPage from "../pages/manager/CRUD";
 
 export const roleConfig = {
   Manager: [
@@ -12,6 +13,7 @@ export const roleConfig = {
     { label: "Orders", path: "/dashboard/orders", element: <OrderPage /> },
     { label: "Kitchen", path: "/dashboard/kitchen", element: <KitchenPage /> },
     { label: "Manager Dashboard", path: "/dashboard/manager", element: <ManagerDashboard /> },
+    { label: "User Management (CRUD)", path: "/dashboard/manager/users", element: <CRUDPage /> },
     {
       label: "Register User",
       path: "/dashboard/manager/register",
