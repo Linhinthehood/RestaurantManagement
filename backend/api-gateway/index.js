@@ -6,6 +6,9 @@ require("dotenv").config();
 // Import raw-body for handling multipart requests
 const getRawBody = require('raw-body');
 
+// Import raw-body for handling multipart requests
+const getRawBody = require('raw-body');
+
 const app = express();
 const PORT = 3000;
 
@@ -69,6 +72,29 @@ const proxyOptions = {
 // Parse JSON body for all routes
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Handle multipart/form-data for file uploads
+app.use(async (req, res, next) => {
+  if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+    try {
+      // Get raw body for multipart requests
+      const rawBody = await getRawBody(req, {
+        length: req.headers['content-length'],
+        limit: '10mb'
+      });
+      
+      // Store raw body for proxy to use
+      req.rawBody = rawBody;
+      console.log('Multipart request body captured, length:', rawBody.length);
+      next();
+    } catch (err) {
+      console.error('Error reading multipart body:', err);
+      next(err);
+    }
+  } else {
+    next();
+  }
+});
 
 // Handle multipart/form-data for file uploads
 app.use(async (req, res, next) => {
