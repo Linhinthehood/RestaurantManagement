@@ -6,11 +6,19 @@ const {
   validateCategoryObjectId, 
   validateCategoryInUse 
 } = require('../middlewares/categoryValidation');
+const { 
+  protect, 
+  requireFoodManagement ,
+  requireMenuAccess
+} = require('../middlewares/authMiddleware');
 
-router.post('/', validateCategoryData, categoryController.createCategory);
-router.get('/', categoryController.getAllCategories);
-router.get('/:id', validateCategoryObjectId, categoryController.getCategoryById);
-router.put('/:id', validateCategoryObjectId, validateCategoryData, categoryController.updateCategory);
-router.delete('/:id', validateCategoryObjectId, validateCategoryInUse, categoryController.deleteCategory);
+// Public routes - xem categories (không cần xác thực)
+router.get('/',protect, requireMenuAccess, categoryController.getAllCategories);
+router.get('/:id', protect, requireMenuAccess, validateCategoryObjectId, categoryController.getCategoryById);
+
+// Protected routes - quản lý categories (Manager, Chef)
+router.post('/', protect, requireFoodManagement, validateCategoryData, categoryController.createCategory);
+router.put('/:id', protect, requireFoodManagement, validateCategoryObjectId, validateCategoryData, categoryController.updateCategory);
+router.delete('/:id', protect, requireFoodManagement, validateCategoryObjectId, validateCategoryInUse, categoryController.deleteCategory);
 
 module.exports = router; 

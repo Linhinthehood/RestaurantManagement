@@ -1,15 +1,13 @@
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
-// Nếu có models User, Table, Reservation thì require ở đây
-// const User = require('../models/User');
-// const Table = require('../models/Table');
-// const Reservation = require('../models/Reservation');
+const ExternalService = require('../services/externalService');
 
 // Validate ObjectId
 const validateObjectId = (field) => (req, res, next) => {
   const value = req.body[field] || req.params[field];
-  if (value && !mongoose.Types.ObjectId.isValid(value)) {
+  // Chỉ validate nếu có giá trị và không phải null/undefined
+  if (value && value !== null && value !== undefined && !mongoose.Types.ObjectId.isValid(value)) {
     return res.status(400).json({ error: `${field} không hợp lệ` });
   }
   next();
@@ -84,15 +82,61 @@ const forbidStatusRollback = async (req, res, next) => {
   next();
 };
 
-// Validate không cho phép tạo order nếu bàn đang có order trạng thái Serving
-const forbidCreateOrderIfTableServing = async (req, res, next) => {
-  const { tableId } = req.body;
-  if (!tableId) return next();
-  const servingOrder = await Order.findOne({ tableId, orderStatus: 'Serving' });
+// Validate không cho phép tạo order nếu reservation đang có order trạng thái Serving
+const forbidCreateOrderIfReservationServing = async (req, res, next) => {
+  const { reservationId } = req.body;
+  // Chỉ kiểm tra nếu có reservationId
+  if (!reservationId || reservationId === null || reservationId === undefined) return next();
+  const servingOrder = await Order.findOne({ reservationId, orderStatus: 'Serving' });
   if (servingOrder) {
-    return res.status(400).json({ error: 'Bàn này đang có order chưa hoàn thành' });
+    return res.status(400).json({ error: 'Reservation này đang có order chưa hoàn thành' });
   }
   next();
+};
+
+// Validate reservation status phải là "Arrived" và chưa có order
+const validateReservationStatusForOrder = async (req, res, next) => {
+  const { reservationId } = req.body;
+  
+  // Chỉ kiểm tra nếu có reservationId
+  if (!reservationId || reservationId === null || reservationId === undefined) return next();
+  
+  try {
+    const reservation = await ExternalService.getReservationById(reservationId, req.headers.authorization);
+    if (!reservation) {
+      return res.status(400).json({ error: 'Reservation không tồn tại' });
+    }
+    
+    // Chuẩn hoá reservation data
+    let reservationData = null;
+    if (reservation.data && reservation.data.reservation) {
+      reservationData = reservation.data.reservation;
+    } else if (reservation.reservation) {
+      reservationData = reservation.reservation;
+    } else {
+      reservationData = reservation;
+    }
+    
+    if (reservationData.status !== 'Arrived') {
+      return res.status(400).json({ 
+        error: 'Chỉ có thể tạo order cho reservation có trạng thái "Arrived"',
+        currentStatus: reservationData.status
+      });
+    }
+    
+    // Kiểm tra xem reservation đã có order chưa
+    const existingOrder = await Order.findOne({ reservationId });
+    if (existingOrder) {
+      return res.status(400).json({ 
+        error: 'Reservation này đã có order, không thể tạo thêm order mới'
+      });
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Error validating reservation status:', error);
+    return res.status(500).json({ error: 'Lỗi khi kiểm tra trạng thái reservation' });
+  }
 };
 
 // 1. Kiểm tra các orderItems đã Served hoặc Cancelled hết chưa trước khi cho phép chuyển sang Completed
@@ -109,27 +153,14 @@ const checkAllOrderItemsServedOrCancelled = async (req, res, next) => {
   next();
 };
 
-// 2. Kiểm tra totalPrice chỉ tính các orderItem trạng thái Served
-const validateTotalPriceWithServedItems = async (req, res, next) => {
-  const order = await Order.findById(req.params.id);
-  if (!order) return res.status(404).json({ error: 'Order not found' });
-  const items = await OrderItem.find({ _id: { $in: order.orderItemId } });
-  const servedItems = items.filter(item => item.status === 'Served');
-  const total = servedItems.reduce((sum, item) => sum + Number(item.price), 0);
-  if (Number(order.totalPrice) !== total) {
-    return res.status(400).json({ error: 'totalPrice không khớp với tổng giá các món đã Served' });
-  }
-  next();
-};
-
 // Validate tổng hợp khi tạo order
 const validateCreateOrder = [
   validateObjectId('reservationId'),
   validateObjectId('userId'),
-  validateObjectId('tableId'),
   validateOrderItemIds,
   validateOrderStatus,
-  forbidCreateOrderIfTableServing
+  validateReservationStatusForOrder,
+  forbidCreateOrderIfReservationServing
 ];
 
 // Validate tổng hợp khi update order
@@ -156,11 +187,11 @@ module.exports = {
   forbidStatusInPut,
   forbidDeleteCompletedOrder,
   forbidStatusRollback,
-  forbidCreateOrderIfTableServing,
+  forbidCreateOrderIfReservationServing,
+  validateReservationStatusForOrder,
   validateCreateOrder,
   validateUpdateOrder,
   validateUpdateOrderStatus,
   validateDeleteOrder,
-  checkAllOrderItemsServedOrCancelled,
-  validateTotalPriceWithServedItems
+  checkAllOrderItemsServedOrCancelled
 }; 

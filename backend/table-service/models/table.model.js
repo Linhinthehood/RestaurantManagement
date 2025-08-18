@@ -16,11 +16,6 @@ const tableSchema = new mongoose.Schema({
     enum: ["Normal", "VIP"],
     default: "Normal",
   },
-  historyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "TableHistory",
-    required: true,
-  },
 });
 
 const tableModel = mongoose.model("Table", tableSchema);
