@@ -4,21 +4,32 @@ const connectDB = require('./config/db');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3006;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Kết nối database
+// Connect to MongoDB
 connectDB();
 
-// Route mẫu
+// Import routes
+const routes = require('./routes');
+
+// Mount API routes
+app.use('/api', routes);
+
+// Basic route để test
 app.get('/', (req, res) => {
-  res.json({ message: 'Payment Service is running!' });
+  res.json({ 
+    message: 'Payment Service is running!',
+    timestamp: new Date().toISOString(),
+    api: '/api'
+  });
 });
 
-// Lắng nghe server
+const PORT = process.env.PORT || 3006;
+
 app.listen(PORT, () => {
-  console.log(`Payment Service đang chạy tại http://localhost:${PORT}`);
-}); 
+  console.log(`Payment Service running on port ${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
+});

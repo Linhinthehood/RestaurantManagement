@@ -68,7 +68,18 @@ exports.getFoodsByCategory = async (req, res) => {
 // Cập nhật food
 exports.updateFood = async (req, res) => {
   try {
-    const food = await Food.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('categoryId', 'name priority');
+    let updateData = { ...req.body };
+    
+    // Xử lý upload image mới nếu có
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'food_images'
+      });
+      updateData.image = result.secure_url;
+      fs.unlinkSync(req.file.path);
+    }
+    
+    const food = await Food.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate('categoryId', 'name priority');
     if (!food) return res.status(404).json({ error: 'Food not found' });
     res.json(food);
   } catch (err) {

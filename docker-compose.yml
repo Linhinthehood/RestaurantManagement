@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   user-service:
     build: ./backend/user-service
@@ -6,8 +5,11 @@ services:
       - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${USER_DB}
-    depends_on:
-      - mongo
+      - JWT_SECRET_KEY=your_jwt_secret_key_here
+      - JWT_EXPIRE_TIME=1d
+      - NODE_ENV=development
+    # depends_on:
+    #   - mongo
 
   reservation-service:
     build: ./backend/reservation-service
@@ -15,8 +17,11 @@ services:
       - "${RESERVATION_SERVICE_PORT}:${RESERVATION_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${RESERVATION_DB}
-    depends_on:
-      - mongo
+      - USER_SERVICE_URL=http://user-service:3001
+      - TABLE_SERVICE_URL=http://table-service:3005/api/v1
+      - NODE_ENV=development
+    # depends_on:
+    #   - mongo
 
   food-service:
     build: ./backend/food-service
@@ -24,8 +29,13 @@ services:
       - "${FOOD_SERVICE_PORT}:${FOOD_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${FOOD_DB}
-    depends_on:
-      - mongo
+      - USER_SERVICE_URL=http://user-service:3001
+      - NODE_ENV=development
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    # depends_on:
+    #   - mongo
 
   order-service:
     build: ./backend/order-service
@@ -33,8 +43,14 @@ services:
       - "${ORDER_SERVICE_PORT}:${ORDER_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${ORDER_DB}
-    depends_on:
-      - mongo
+      - USER_SERVICE_URL=http://user-service:3001
+      - TABLE_SERVICE_URL=http://table-service:3005
+      - RESERVATION_SERVICE_URL=http://reservation-service:3002
+      - FOOD_SERVICE_URL=http://food-service:3003
+      - PAYMENT_SERVICE_URL=http://payment-service:3006
+      - NODE_ENV=development
+    # depends_on:
+    #   - mongo
 
   table-service:
     build: ./backend/table-service
@@ -42,22 +58,28 @@ services:
       - "${TABLE_SERVICE_PORT}:${TABLE_SERVICE_PORT}"
     environment:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${TABLE_DB}
-    depends_on:
-      - mongo
+      - USER_SERVICE_URL=http://user-service:3001
+      - RESERVATION_SERVICE_URL=http://reservation-service:3002/api/v1
+      - NODE_ENV=development
+    # depends_on:
+    #   - mongo
 
   payment-service:
     build: ./backend/payment-service
     ports:
       - "${PAYMENT_SERVICE_PORT}:${PAYMENT_SERVICE_PORT}"
     environment:
-      - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${PAYMENT_DB}
-    depends_on:
-      - mongo
+      - MONGODB_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${PAYMENT_DB}
+      - USER_SERVICE_URL=http://user-service:3001
+      - ORDER_SERVICE_URL=http://order-service:3004
+      - RESERVATION_SERVICE_URL=http://reservation-service:3002
+    # depends_on:
+    #   - mongo
 
   api-gateway:
     build: ./backend/api-gateway
     ports:
-      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+      - "3000:3000"
     depends_on:
       - user-service
       - reservation-service
@@ -65,20 +87,11 @@ services:
       - order-service
       - table-service
       - payment-service
+    restart: unless-stopped
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
-    depends_on:
-      - api-gateway
-
-  mongo:
-    image: mongo:6
-    ports:
-      - "${MONGO_PORT}:${MONGO_PORT}"
-    volumes:
-      - mongo-data:/data/db
-
-volumes:
-  mongo-data: 
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+  #   depends_on:
+  #     - api-gateway 
