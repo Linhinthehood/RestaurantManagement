@@ -18,7 +18,8 @@ import {
   createOrder,
   updateOrderStatus,
   clearError,
-  clearSuccess
+  clearSuccess,
+  updateOrderStatus
 } from "../../store/orderSlice";
 import { paymentService } from "../../services/paymentService";
 

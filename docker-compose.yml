@@ -88,10 +88,3 @@ services:
       - table-service
       - payment-service
     restart: unless-stopped
-
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "${FRONTEND_PORT}:${FRONTEND_PORT}"
-  #   depends_on:
-  #     - api-gateway 
