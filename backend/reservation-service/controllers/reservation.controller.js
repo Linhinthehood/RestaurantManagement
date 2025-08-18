@@ -59,6 +59,48 @@ const reservationController = {
           success: false,
         });
       }
+      if (error.message === "Cannot fetch table info") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
+
+      if (error.message && error.message.includes("only fit")) {
+        return res.status(400).json({
+          message: error.message,
+          success: false,
+        });
+      }
+      if (
+        error.message &&
+        error.message.includes(
+          "Cannot assign table to a reservation that is past its check-in time."
+        )
+      ) {
+        return res.status(400).json({
+          message: error.message,
+          success: false,
+        });
+      }
+      if (
+        error.message &&
+        error.message.includes("already assigned to this reservation")
+      ) {
+        return res.status(400).json({
+          message: error.message,
+          success: false,
+        });
+      }
+      if (
+        error.message &&
+        error.message.includes("is not enough for this reservation")
+      ) {
+        return res.status(400).json({
+          message: error.message,
+          success: false,
+        });
+      }
       res.status(500).json({
         message: "Internal server error",
         success: false,
@@ -111,6 +153,12 @@ const reservationController = {
           success: false,
         });
       }
+      if (error.message === "Reservation didn't assigned") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
       res.status(500).json({
         message: "Internal server error",
         success: false,
@@ -119,10 +167,11 @@ const reservationController = {
   },
 
   getAllReservations: async (req, res) => {
-    const { date } = req.query;
+    const { date, time } = req.query;
     try {
       const reservations = await reservationService.getAllReservations({
         dateStr: date,
+        timeStr: time,
       });
       res.status(200).json({
         message: "Reservations fetched successfully",
@@ -187,12 +236,8 @@ const reservationController = {
 
   getAvailableTables: async (req, res) => {
     try {
-      const { date, time, quantity } = req.query;
-      const tables = await reservationService.getAvailableTables(
-        date,
-        time,
-        quantity
-      );
+      const { date, time } = req.query;
+      const tables = await reservationService.getAvailableTables(date, time);
       res.status(200).json({
         message: "Available tables fetched successfully",
         tables: tables,
@@ -206,13 +251,16 @@ const reservationController = {
           success: false,
         });
       }
-      if (error.message === "Invalid quantity provided") {
-        return res.status(400).json({
+      if (error.message === "Invalid table data received from table service") {
+        return res.status(404).json({
           message: error.message,
           success: false,
         });
       }
-      if (error.message === "Invalid table data received from table service") {
+      if (
+        error.message ===
+        "Cannot assign table to a reservation that is past its check-in time."
+      ) {
         return res.status(404).json({
           message: error.message,
           success: false,
@@ -259,6 +307,47 @@ const reservationController = {
       res
         .status(500)
         .json({ message: "Internal server error", success: false });
+    }
+  },
+
+  // Cập nhật tableStatus khi payment hoàn thành
+  updateTableStatus: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { tableStatus } = req.body;
+      
+      if (!tableStatus || !['Available', 'Pending', 'Occupied', 'Unavailable'].includes(tableStatus)) {
+        return res.status(400).json({
+          message: "Invalid table status",
+          success: false,
+        });
+      }
+
+      const result = await reservationService.updateTableStatus(id, tableStatus);
+      
+      res.status(200).json({
+        message: "Table status updated successfully",
+        result: result,
+        success: true,
+      });
+    } catch (error) {
+      console.error("Error updating table status:", error);
+      if (error.message === "Reservation not found") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
+      if (error.message === "No active table assignment found") {
+        return res.status(404).json({
+          message: error.message,
+          success: false,
+        });
+      }
+      res.status(500).json({
+        message: "Internal server error",
+        success: false,
+      });
     }
   },
 };

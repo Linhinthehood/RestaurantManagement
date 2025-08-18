@@ -12,8 +12,8 @@ function App() {
 
   useEffect(() => {
     // Khôi phục trạng thái authentication từ localStorage
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
 
     if (token && user) {
       try {
@@ -22,15 +22,15 @@ function App() {
         dispatch(setUser(userData));
         dispatch(setAuthenticated(true));
       } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        console.error("Error parsing user data:", error);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
         dispatch(setAuthenticated(false));
       }
     } else {
       dispatch(setAuthenticated(false));
     }
-    
+
     // Không cần delay, chỉ cần đảm bảo state đã được khôi phục
     setIsInitializing(false);
   }, [dispatch]);

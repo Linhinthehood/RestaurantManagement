@@ -8,6 +8,7 @@ import {
   clearSelectedCategory
 } from "../../store/foodSlice";
 import { orderService, orderItemService } from "../../services/orderService";
+import { foodService } from "../../services/foodService";
 import { AlertCircle, Loader2, Plus, Minus, ShoppingCart, X } from "lucide-react";
 
 function useQuery() {
@@ -22,6 +23,8 @@ const MenuPage = () => {
   const [orderItems, setOrderItems] = useState([]);
   const [showOrderItems, setShowOrderItems] = useState(false);
   const [loadingOrderItems, setLoadingOrderItems] = useState(false);
+  const [success, setSuccess] = useState(null);
+  const [menuError, setMenuError] = useState(null);
   const query = useQuery();
   const orderId = query.get('orderId');
   const reservationId = query.get('reservationId');
@@ -39,7 +42,7 @@ const MenuPage = () => {
     }
   }, [error, dispatch]);
 
-  // Fetch order items when orderId changes
+  // Fetch order items when orderId changes or component mounts
   useEffect(() => {
     if (orderId) {
       fetchOrderItems();
@@ -52,9 +55,39 @@ const MenuPage = () => {
     setLoadingOrderItems(true);
     try {
       const response = await orderService.getOrderById(orderId);
-      setOrderItems(response.orderItems || []);
+      console.log('Fetched order response:', response); // Debug log
+      
+      // API returns { success, message, data } structure
+      // We need to access response.data.orderItems
+      if (response && response.data && response.data.orderItems) {
+        // Fetch food details for each order item
+        const orderItemsWithFoodDetails = await Promise.all(
+          response.data.orderItems.map(async (item) => {
+            try {
+              const foodResponse = await foodService.getFoodById(item.foodId);
+              return {
+                ...item,
+                foodName: foodResponse.data?.name || foodResponse.name || 'Unknown Food'
+              };
+            } catch (err) {
+              console.error('Failed to fetch food details for item:', item._id, err);
+              return {
+                ...item,
+                foodName: `Food ID: ${item.foodId}`
+              };
+            }
+          })
+        );
+        
+        setOrderItems(orderItemsWithFoodDetails);
+        console.log('Set order items with food details:', orderItemsWithFoodDetails);
+      } else {
+        console.log('No orderItems found in response:', response);
+        setOrderItems([]);
+      }
     } catch (err) {
       console.error('Failed to fetch order items:', err);
+      setOrderItems([]);
     } finally {
       setLoadingOrderItems(false);
     }
@@ -102,25 +135,31 @@ const MenuPage = () => {
       return;
     }
     try {
-      await orderItemService.createOrderItem({
+      console.log('Adding food to order:', food._id, 'quantity:', getQuantity(food._id), 'note:', getNote(food._id));
+      
+      const result = await orderItemService.createOrderItem({
         orderId,
         foodId: food._id,
         quantity: getQuantity(food._id),
         note: getNote(food._id)
       });
       
+      console.log('Order item created successfully:', result);
+      
       // Reset quantity and note for this food
       setQuantity(food._id, 1);
       setNote(food._id, '');
       
       // Refresh order items
+      console.log('Refreshing order items...');
       await fetchOrderItems();
       
-      alert('Order item added successfully!');
+      setSuccess('Order item added successfully!');
     } catch (err) {
       // Display specific error message from backend
       const errorMessage = err.message || 'Failed to add order item!';
-      alert(errorMessage);
+      console.error('Error adding order item:', err);
+      setMenuError(errorMessage);
     }
   };
 
@@ -129,9 +168,9 @@ const MenuPage = () => {
       await orderItemService.updateOrderItemStatus(orderItemId, 'Served');
       // Refresh order items
       await fetchOrderItems();
-      alert('Order item marked as served successfully!');
+      setSuccess('Order item marked as served successfully!');
     } catch (err) {
-      alert('Failed to mark order item as served!');
+      setMenuError('Failed to mark order item as served!');
     }
   };
 
@@ -148,6 +187,32 @@ const MenuPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Notifications */}
+      {menuError && (
+        <div className="fixed top-4 right-4 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg flex items-center">
+          <AlertCircle className="w-5 h-5 mr-2" />
+          {menuError}
+          <button 
+            onClick={() => setMenuError(null)}
+            className="ml-4 text-red-500 hover:text-red-700"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {success && (
+        <div className="fixed top-4 right-4 z-50 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg flex items-center">
+          <AlertCircle className="w-5 h-5 mr-2" />
+          {success}
+          <button 
+            onClick={() => setSuccess(null)}
+            className="ml-4 text-green-500 hover:text-green-700"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      
       {/* Category filter bar */}
       <div className="w-full bg-white border-b px-6 py-4 sticky top-0 z-10">
         <div className="flex flex-wrap gap-2 overflow-x-auto items-center">
@@ -217,7 +282,7 @@ const MenuPage = () => {
                 {orderItems.map((item) => (
                   <div key={item._id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold">{item.foodName || item.foodId?.name || item.food?.name || 'Unknown Food'}</h3>
+                      <h3 className="font-semibold">{item.foodName || (item.foodId && typeof item.foodId === 'object' ? item.foodId.name : `Food ID: ${item.foodId}`) || 'Unknown Food'}</h3>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
                           {item.status.replace('_', ' ')}

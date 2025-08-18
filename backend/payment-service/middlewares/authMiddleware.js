@@ -136,14 +136,19 @@ const optionalAuth = async (req, res, next) => {
   }
 };
 
-// Middleware kiểm tra quyền quản lý thanh toán (Manager, Receptionist)
+// Middleware kiểm tra quyền quản lý payment (Manager, Waiter, Receptionist)
 const requirePaymentManagement = (req, res, next) => {
-  return authorize('Manager', 'Receptionist')(req, res, next);
+  return authorize('Manager', 'Waiter', 'Receptionist')(req, res, next);
 };
 
-// Middleware kiểm tra quyền xem thông tin thanh toán (Manager, Receptionist, Waiter)
+// Middleware kiểm tra quyền xem payment (tất cả role)
 const requirePaymentAccess = (req, res, next) => {
-  return authorize('Manager', 'Receptionist', 'Waiter')(req, res, next);
+  return authorize('Manager', 'Waiter', 'Chef', 'Receptionist')(req, res, next);
+};
+
+// Middleware kiểm tra quyền tạo payment (Manager, Waiter, Receptionist)
+const requirePaymentCreation = (req, res, next) => {
+  return authorize('Manager', 'Waiter', 'Receptionist')(req, res, next);
 };
 
 module.exports = {
@@ -151,5 +156,6 @@ module.exports = {
   authorize,
   optionalAuth,
   requirePaymentManagement,
-  requirePaymentAccess
-}; 
+  requirePaymentAccess,
+  requirePaymentCreation
+};

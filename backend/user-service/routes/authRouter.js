@@ -19,9 +19,9 @@ router.put('/profile', AuthController.updateProfile);
 router.put('/change-password', AuthController.changePassword);
 
 // Manager only routes
-router.get('/users', authorize('Manager'), AuthController.getUsers);
-router.get('/users/:id', authorize('Manager'), AuthController.getUserById);
-router.put('/users/:id', authorize('Manager'), AuthController.updateUser);
-router.delete('/users/:id', authorize('Manager'), AuthController.deleteUser);
+router.get('/users', authorize('Manager','Receptionist','Waiter','Chef'), AuthController.getUsers);
+router.get('/users/:id', authorize('Manager','Receptionist','Waiter','Chef'), AuthController.getUserById);
+router.put('/users/:id', authorize('Manager','Receptionist','Waiter','Chef'), AuthController.updateUser);
+router.delete('/users/:id', authorize('Manager','Receptionist','Waiter','Chef'), AuthController.deleteUser);
 
 export default router;
