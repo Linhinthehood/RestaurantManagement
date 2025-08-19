@@ -1,6 +1,6 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:3000/api/v1";
+import { API_BASE_URL as BASE } from "./apiConfig";
+const API_BASE_URL = `${BASE}/v1`;
 
 const reservationAPI = axios.create({
   baseURL: API_BASE_URL,
