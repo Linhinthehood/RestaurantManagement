@@ -5,6 +5,7 @@ import MenuPage from "../pages/menu/MenuPage";
 import PaymentPage from "../pages/payment/PaymentPage";
 import RegisterUserPage from "../pages/manager/RegisterUserPage";
 import ManagerDashboard from "../pages/manager/ManagerDashboard";
+import CRUDPage from "../pages/manager/CRUD";
 
 export const roleConfig = {
   Manager: [

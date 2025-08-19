@@ -78,6 +78,17 @@ export const orderService = {
       throw error;
     }
   },
+
+  // Update order status
+  updateOrderStatus: async (orderId, orderStatus) => {
+    try {
+      const response = await orderAPI.patch(`/orders/${orderId}/status`, { orderStatus });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
+    }
+  },
 };
 
 // Order Item Service
