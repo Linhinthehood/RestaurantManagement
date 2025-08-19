@@ -60,6 +60,14 @@ router.patch('/:id/status',
   paymentController.updatePaymentStatus
 );
 
+// Cập nhật mã giảm giá của payment
+router.patch('/:id/discount',
+  protect,
+  requirePaymentManagement,
+  validatePaymentId,
+  paymentController.updatePaymentDiscount
+);
+
 // Xóa payment
 router.delete('/:id', 
   protect, 

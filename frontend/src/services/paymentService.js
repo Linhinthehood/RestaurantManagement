@@ -61,12 +61,23 @@ export const paymentService = {
   },
 
   // Get all payments
-  getAllPayments: async () => {
+  getAllPayments: async (params = {}) => {
     try {
-      const response = await paymentAPI.get('/payments');
+      const response = await paymentAPI.get('/payments', { params });
       return response.data;
     } catch (error) {
       console.error('Error fetching all payments:', error);
+      throw error;
+    }
+  },
+
+  // Get paginated payments for table display
+  getPaymentsPaginated: async ({ page = 1, limit = 10, ...restParams } = {}) => {
+    try {
+      const response = await paymentAPI.get('/payments', { params: { page, limit, ...restParams } });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching paginated payments:', error);
       throw error;
     }
   },
@@ -89,6 +100,17 @@ export const paymentService = {
       return response.data;
     } catch (error) {
       console.error('Error updating payment status:', error);
+      throw error;
+    }
+  },
+
+  // Update payment discount
+  updatePaymentDiscount: async (paymentId, discountId) => {
+    try {
+      const response = await paymentAPI.patch(`/payments/${paymentId}/discount`, { discountId });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating payment discount:', error);
       throw error;
     }
   },

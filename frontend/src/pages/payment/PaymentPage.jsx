@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { orderService } from "../../services/orderService";
 import { foodService } from "../../services/foodService";
 import { paymentService } from "../../services/paymentService";
+import { discountService } from "../../services/discountService";
 import { 
   CreditCard, 
   Loader2, 
@@ -35,6 +36,8 @@ const PaymentPage = () => {
   const [success, setSuccess] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [discounts, setDiscounts] = useState([]);
+  const [selectedDiscountId, setSelectedDiscountId] = useState(null);
 
   useEffect(() => {
     if (paymentId) {
@@ -43,6 +46,18 @@ const PaymentPage = () => {
       fetchOrderDetails();
     }
   }, [paymentId, orderId]);
+
+  useEffect(() => {
+    const loadDiscounts = async () => {
+      try {
+        const res = await discountService.getAll();
+        if (res.success) setDiscounts(res.data || []);
+      } catch (e) {
+        console.error('Failed to load discounts');
+      }
+    };
+    loadDiscounts();
+  }, []);
 
   const fetchPaymentDetails = async () => {
     try {
@@ -53,6 +68,7 @@ const PaymentPage = () => {
         const paymentData = paymentResponse.data;
         setPayment(paymentData);
         setPaymentMethod(paymentData.paymentMethod || 'Cash');
+        setSelectedDiscountId(paymentData.discountId || null);
         
         // If payment has order data, use it; otherwise fetch separately
         if (paymentData.reservation && paymentData.reservation.order) {
@@ -152,6 +168,21 @@ const PaymentPage = () => {
       depositAmount,
       finalAmount
     };
+  };
+
+  const handleApplyDiscount = async () => {
+    if (!payment) return;
+    try {
+      const res = await paymentService.updatePaymentDiscount(payment._id, selectedDiscountId || null);
+      if (res.success) {
+        setPayment(res.data);
+        setSuccess('Applied discount successfully');
+      } else {
+        setError(res.message || 'Failed to apply discount');
+      }
+    } catch (e) {
+      setError('Failed to apply discount');
+    }
   };
 
   const handlePayment = async () => {
@@ -450,6 +481,31 @@ const PaymentPage = () => {
                   </div>
                 </div>
               )}
+
+              {/* Discount Selector */}
+              <div className="mb-6 p-4 bg-white rounded-lg border">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium">Discount</h3>
+                  <button
+                    onClick={handleApplyDiscount}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Apply
+                  </button>
+                </div>
+                <select
+                  value={selectedDiscountId || ''}
+                  onChange={(e) => setSelectedDiscountId(e.target.value || null)}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="">No discount</option>
+                  {discounts.map((d) => (
+                    <option key={d._id} value={d._id}>
+                      {d.discountCode} - {d.discountPercentage}% ({d.usedCount || 0}/{d.quantity})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               {/* Total Amount */}
               <div className="mb-6 p-4 bg-green-50 rounded-lg">

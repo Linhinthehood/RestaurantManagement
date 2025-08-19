@@ -175,6 +175,15 @@ app.use(
   })
 );
 
+app.use(
+  "/api/discounts",
+  createProxyMiddleware({
+    ...proxyOptions,
+    target: "http://payment-service:3006",
+    pathRewrite: { "^/api/discounts": "/api/discounts" },
+  })
+);
+
 // Health check endpoint
 app.get("/", (req, res) => {
   res.json({

@@ -169,17 +169,97 @@ exports.getPaymentById = async (req, res) => {
 // Lấy tất cả payments
 exports.getAllPayments = async (req, res) => {
   try {
-    const payments = await Payment.find().sort({ createdAt: -1 });
-    
+    // Server-side filtering by date range
+    const { filterType, startDate, endDate, status, paymentMethod } = req.query;
+    const page = parseInt(req.query.page, 10) || null;
+    const limit = parseInt(req.query.limit, 10) || null;
+
+    const buildDateRange = () => {
+      const now = new Date();
+      let start;
+      let end;
+      switch (filterType) {
+        case 'today': {
+          start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+          break;
+        }
+        case 'week': {
+          const dayOfWeek = now.getDay();
+          start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+          end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 7);
+          break;
+        }
+        case 'month': {
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          break;
+        }
+        case 'quarter': {
+          const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+          start = new Date(now.getFullYear(), quarterStartMonth, 1);
+          end = new Date(now.getFullYear(), quarterStartMonth + 3, 1);
+          break;
+        }
+        case 'year': {
+          start = new Date(now.getFullYear(), 0, 1);
+          end = new Date(now.getFullYear() + 1, 0, 1);
+          break;
+        }
+        case 'custom': {
+          if (startDate && endDate) {
+            start = new Date(startDate);
+            end = new Date(endDate);
+            // Include the end date fully by moving to the next day start
+            end.setDate(end.getDate() + 1);
+          }
+          break;
+        }
+        default:
+          break;
+      }
+      if (start && end) return { start, end };
+      return null;
+    };
+
+    const range = buildDateRange();
+    const query = {};
+    if (range) {
+      query.createdAt = { $gte: range.start, $lt: range.end };
+    }
+    if (status) {
+      query.status = status;
+    }
+    if (paymentMethod) {
+      query.paymentMethod = paymentMethod;
+    }
+
+    let paymentsQuery = Payment.find(query).sort({ createdAt: -1 });
+    const total = await Payment.countDocuments(query);
+    if (page && limit) {
+      const skip = (page - 1) * limit;
+      paymentsQuery = paymentsQuery.skip(skip).limit(limit);
+    }
+    const payments = await paymentsQuery;
+
     const enrichedPayments = await Promise.all(
       payments.map(payment => enrichPayment(payment, req))
     );
 
-    res.json({
+    const response = {
       success: true,
       message: 'Payments retrieved successfully',
       data: enrichedPayments
-    });
+    };
+    if (page && limit) {
+      response.pagination = {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    }
+    res.json(response);
 
   } catch (err) {
     console.error('Error getting all payments:', err);
@@ -266,6 +346,75 @@ exports.updatePaymentStatus = async (req, res) => {
       message: 'Internal server error',
       error: err.message
     });
+  }
+};
+
+// Cập nhật mã giảm giá của payment và tính lại số tiền
+exports.updatePaymentDiscount = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { discountId } = req.body; // null/undefined để xóa discount
+
+    const payment = await Payment.findById(id);
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment not found' });
+    }
+
+    if (payment.status !== 'Pending') {
+      return res.status(400).json({ success: false, message: 'Chỉ có thể cập nhật mã giảm giá khi payment đang Pending' });
+    }
+
+    // Validate discount (nếu có)
+    let discountPercentage = 0;
+    if (discountId) {
+      const discount = await Discount.findById(discountId);
+      if (!discount) {
+        return res.status(404).json({ success: false, message: 'Mã giảm giá không tồn tại' });
+      }
+      if (!discount.isValid) {
+        return res.status(400).json({ success: false, message: 'Mã giảm giá không hợp lệ hoặc đã hết hạn' });
+      }
+      discountPercentage = discount.discountPercentage;
+      payment.discountId = discountId;
+    } else {
+      payment.discountId = null;
+    }
+
+    // Tính lại số tiền
+    // originalAmount có thể là Decimal128
+    let originalAmountNum;
+    if (payment.originalAmount && typeof payment.originalAmount === 'object' && payment.originalAmount.$numberDecimal) {
+      originalAmountNum = parseFloat(payment.originalAmount.$numberDecimal);
+    } else {
+      originalAmountNum = parseFloat(payment.originalAmount || 0);
+    }
+    if (isNaN(originalAmountNum)) originalAmountNum = 0;
+
+    // VAT 10%
+    const taxAmount = (originalAmountNum * 10) / 100;
+    // Discount theo %
+    const discountAmount = (originalAmountNum * discountPercentage) / 100;
+
+    // Lấy deposit từ reservation
+    const reservation = await ExternalService.getReservationById(payment.reservationId, req.headers.authorization);
+    let depositAmount = 0;
+    if (reservation?.deposit && typeof reservation.deposit === 'object' && reservation.deposit.$numberDecimal) {
+      depositAmount = parseFloat(reservation.deposit.$numberDecimal);
+    } else {
+      depositAmount = parseFloat(reservation?.deposit || 0);
+    }
+    if (isNaN(depositAmount)) depositAmount = 0;
+
+    const finalAmount = originalAmountNum + taxAmount - discountAmount - depositAmount;
+    payment.finalAmount = finalAmount;
+
+    await payment.save();
+
+    const enrichedPayment = await enrichPayment(payment, req);
+    return res.json({ success: true, message: 'Cập nhật mã giảm giá thành công', data: enrichedPayment });
+  } catch (err) {
+    console.error('Error updating payment discount:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error', error: err.message });
   }
 };
 
