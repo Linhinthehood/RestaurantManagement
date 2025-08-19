@@ -167,7 +167,7 @@ const reservationController = {
   },
 
   getAllReservations: async (req, res) => {
-    const { date, time } = req.query;
+    const { date, time, status } = req.query;
     try {
       const reservations = await reservationService.getAllReservations({
         dateStr: date,
@@ -315,16 +315,24 @@ const reservationController = {
     try {
       const { id } = req.params;
       const { tableStatus } = req.body;
-      
-      if (!tableStatus || !['Available', 'Pending', 'Occupied', 'Unavailable'].includes(tableStatus)) {
+
+      if (
+        !tableStatus ||
+        !["Available", "Pending", "Occupied", "Unavailable"].includes(
+          tableStatus
+        )
+      ) {
         return res.status(400).json({
           message: "Invalid table status",
           success: false,
         });
       }
 
-      const result = await reservationService.updateTableStatus(id, tableStatus);
-      
+      const result = await reservationService.updateTableStatus(
+        id,
+        tableStatus
+      );
+
       res.status(200).json({
         message: "Table status updated successfully",
         result: result,

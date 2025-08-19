@@ -12,6 +12,7 @@ import {
   TimePicker,
 } from "antd";
 import reservationService from "../../services/reservationService";
+import ReservationStatusFilter from "./ReservationStatusFilter";
 
 const ReservationList = ({
   reservations,
@@ -30,6 +31,12 @@ const ReservationList = ({
     reservationDateTime: initialDateTime,
     note: "",
   });
+
+  const [filterStatus, setFilterStatus] = useState("All");
+
+  const filtered = reservations.filter((r) =>
+    filterStatus === "All" ? true : r.status === filterStatus
+  );
 
   const handleCreateWalkIn = async () => {
     try {
@@ -67,8 +74,12 @@ const ReservationList = ({
       </div>
 
       <div className="space-y-4">
-        {reservations.length > 0 ? (
-          reservations.map((rsv) => (
+        <ReservationStatusFilter
+          currentStatus={filterStatus}
+          onChange={setFilterStatus}
+        />
+        {filtered.length > 0 ? (
+          filtered.map((rsv) => (
             <ReservationListItem
               key={rsv._id}
               rsv={rsv}

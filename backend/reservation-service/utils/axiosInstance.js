@@ -5,4 +5,9 @@ const tableServiceApi = axios.create({
   timeout: 5000,
 });
 
-export default tableServiceApi;
+const paymentServiceApi = axios.create({
+  baseURL:
+    process.env.PAYMENT_SERVICE_URL || "http://localhost:3006/api/payments",
+  timeout: 5000,
+});
+export { tableServiceApi, paymentServiceApi };

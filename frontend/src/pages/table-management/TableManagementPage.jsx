@@ -102,7 +102,7 @@ const TableManagementPage = () => {
           </div>
         </div>
 
-        <div className="w-1/3 bg-white rounded-xl shadow p-4 overflow-auto">
+        <div className="w-2/5 bg-white rounded-xl shadow p-4 overflow-auto">
           <ReservationList
             reservations={reservations}
             selectedDate={selectedDate}
