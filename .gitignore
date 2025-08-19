@@ -31,14 +31,5 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Lock files
-frontend/package-lock.json
-backend/user-service/package-lock.json
-backend/reservation-service/package-lock.json
-backend/food-service/package-lock.json
-backend/order-service/package-lock.json
-backend/table-service/package-lock.json
-backend/payment-service/package-lock.json
-
 # MongoDB data (nếu mount volume local)
 mongo-data/ 
