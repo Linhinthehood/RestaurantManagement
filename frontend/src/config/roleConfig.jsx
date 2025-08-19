@@ -25,7 +25,6 @@ export const roleConfig = {
     { label: "Orders", path: "/dashboard/orders", element: <OrderPage /> },
     // Menu, Payment và Table Management sẽ được truy cập qua orderId/reservationId, không hiển thị trong sidebar
     { label: "", path: "/dashboard/menu", element: <MenuPage /> },
-    { label: "", path: "/dashboard/table-management", element: <TableManagementPage /> },
     { label: "", path: "/dashboard/payment", element: <PaymentPage /> },
   ],
   Chef: [
