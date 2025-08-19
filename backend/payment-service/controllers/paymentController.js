@@ -331,6 +331,16 @@ exports.updatePaymentStatus = async (req, res) => {
     payment.status = status;
     await payment.save();
 
+    // Nếu payment đã hoàn tất, cập nhật trạng thái bàn về Available trong reservation-service
+    if (status === 'Completed') {
+      try {
+        await ExternalService.updateTableStatusToAvailable(payment.reservationId, req.headers.authorization);
+      } catch (crossErr) {
+        console.error('Failed to update table status to Available:', crossErr?.message || crossErr);
+        // Không chặn flow trả về cho client, chỉ log lỗi tích hợp liên-service
+      }
+    }
+
     const enrichedPayment = await enrichPayment(payment, req);
 
     res.json({
