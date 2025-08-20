@@ -6,6 +6,8 @@ require("dotenv").config();
 // Import raw-body for handling multipart requests
 const getRawBody = require('raw-body');
 
+// Import raw-body for handling multipart requests
+
 const app = express();
 const PORT = 3000;
 
@@ -70,6 +72,7 @@ const proxyOptions = {
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+// Handle multipart/form-data for file uploads
 // Handle multipart/form-data for file uploads
 app.use(async (req, res, next) => {
   if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
@@ -172,6 +175,15 @@ app.use(
     ...proxyOptions,
     target: "http://payment-service:3006",
     pathRewrite: { "^/api/payments": "/api/payments" },
+  })
+);
+
+app.use(
+  "/api/discounts",
+  createProxyMiddleware({
+    ...proxyOptions,
+    target: "http://payment-service:3006",
+    pathRewrite: { "^/api/discounts": "/api/discounts" },
   })
 );
 

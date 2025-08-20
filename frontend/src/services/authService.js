@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://localhost:3000/api/auth";
+import { API_BASE_URL as BASE } from "./apiConfig";
+const API_BASE_URL = `${BASE}/auth`;
 
 export const authService = {
   // Đăng nhập

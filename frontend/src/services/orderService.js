@@ -1,6 +1,5 @@
 import axios from "axios";
-
-const API_BASE_URL = "http://localhost:3000/api";
+import { API_BASE_URL } from "./apiConfig";
 
 // Create axios instance with default config
 const orderAPI = axios.create({
@@ -73,6 +72,17 @@ export const orderService = {
   updateOrderStatus: async (orderId, status) => {
     try {
       const response = await orderAPI.patch(`/orders/${orderId}/status`, { orderStatus: status });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
+    }
+  },
+
+  // Update order status
+  updateOrderStatus: async (orderId, orderStatus) => {
+    try {
+      const response = await orderAPI.patch(`/orders/${orderId}/status`, { orderStatus });
       return response.data;
     } catch (error) {
       console.error('Error updating order status:', error);

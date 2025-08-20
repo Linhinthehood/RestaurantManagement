@@ -5,13 +5,14 @@ import MenuPage from "../pages/menu/MenuPage";
 import PaymentPage from "../pages/payment/PaymentPage";
 import RegisterUserPage from "../pages/manager/RegisterUserPage";
 import ManagerDashboard from "../pages/manager/ManagerDashboard";
+import CRUDPage from "../pages/manager/CRUD";
 
 export const roleConfig = {
   Manager: [
-    { label: "Table Management", path: "/dashboard/table-management", element: <TableManagementPage /> },
+    { label: "Manager Dashboard", path: "/dashboard/manager", element: <ManagerDashboard /> },
+    { label: "Assign Table", path: "/dashboard/table-management", element: <TableManagementPage /> },
     { label: "Orders", path: "/dashboard/orders", element: <OrderPage /> },
     { label: "Kitchen", path: "/dashboard/kitchen", element: <KitchenPage /> },
-    { label: "Manager Dashboard", path: "/dashboard/manager", element: <ManagerDashboard /> },
     {
       label: "Register User",
       path: "/dashboard/manager/register",
@@ -23,9 +24,8 @@ export const roleConfig = {
   ],
   Waiter: [
     { label: "Orders", path: "/dashboard/orders", element: <OrderPage /> },
-    // Menu, Payment và Table Management sẽ được truy cập qua orderId/reservationId, không hiển thị trong sidebar
+    // Menu, Payment sẽ được truy cập qua orderId/reservationId, không hiển thị trong sidebar
     { label: "", path: "/dashboard/menu", element: <MenuPage /> },
-    { label: "", path: "/dashboard/table-management", element: <TableManagementPage /> },
     { label: "", path: "/dashboard/payment", element: <PaymentPage /> },
   ],
   Chef: [
@@ -33,7 +33,7 @@ export const roleConfig = {
   ],
   Receptionist: [
     {
-      label: "Table Management",
+      label: "Assign Table",
       path: "/dashboard/table-management",
       element: <TableManagementPage />,
     },
