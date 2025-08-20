@@ -16,12 +16,14 @@ const TableManagementPage = () => {
     // new Date().toLocaleTimeString([], { hour: "2-digit" }) + ":00"
   );
   const [tables, setTables] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [reservationRefreshTrigger, setReservationRefreshTrigger] = useState(0);
 
   useEffect(() => {
     fetchAvailableTables();
-  }, [selectedDate, selectedTime]);
+    fetchReservations();
+  }, [selectedDate, selectedTime, reservationRefreshTrigger]);
 
   const fetchAvailableTables = async () => {
     setIsLoading(true);
@@ -31,7 +33,7 @@ const TableManagementPage = () => {
       const res = await axios.get(
         "http://localhost:3000/api/v1/reservations/available",
         {
-          params: { date: formattedDate, time: selectedTime, quantity: 4 },
+          params: { date: formattedDate, time: selectedTime },
         }
       );
       setTables(res.data.tables);
@@ -42,8 +44,25 @@ const TableManagementPage = () => {
     }
   };
 
+  const fetchReservations = async () => {
+    setIsLoading(true);
+    try {
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+      const res = await axios.get("http://localhost:3000/api/v1/reservations", {
+        params: { date: formattedDate, time: selectedTime },
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
+      setReservations(res.data.reservations || []);
+    } catch (error) {
+      console.error("Failed to fetch reservations:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleReservationChanged = async () => {
-    fetchAvailableTables();
     setReservationRefreshTrigger((prev) => prev + 1);
   };
 
@@ -85,6 +104,7 @@ const TableManagementPage = () => {
 
         <div className="w-1/3 bg-white rounded-xl shadow p-4 overflow-auto">
           <ReservationList
+            reservations={reservations}
             selectedDate={selectedDate}
             selectedTime={selectedTime}
             refreshTrigger={reservationRefreshTrigger}

@@ -1,13 +1,14 @@
-const API_BASE_URL = 'http://localhost:3000/api/auth';
+import { API_BASE_URL as BASE } from "./apiConfig";
+const API_BASE_URL = `${BASE}/auth`;
 
 export const authService = {
   // Đăng nhập
   async login(email, password) {
     try {
       const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
@@ -15,7 +16,7 @@ export const authService = {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Đăng nhập thất bại');
+        throw new Error(data.message || "Đăng nhập thất bại");
       }
 
       return data;
@@ -28,17 +29,65 @@ export const authService = {
   async getProfile(token) {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Không thể lấy thông tin profile');
+        throw new Error(data.message || "Không thể lấy thông tin profile");
+      }
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Cập nhật thông tin profile
+  async updateProfile(token, profileData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/profile`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update profile");
+      }
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Đổi mật khẩu
+  async changePassword(token, passwordData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/change-password`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(passwordData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to change password");
       }
 
       return data;
@@ -49,7 +98,7 @@ export const authService = {
 
   // Đăng xuất
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  }
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  },
 };
