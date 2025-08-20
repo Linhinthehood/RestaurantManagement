@@ -6,8 +6,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RegisterUserModal from './RegisterUserModal';
 import axios from 'axios';
+import { API_BASE_URL as BASE } from '../../services/apiConfig';
 
-const API_URL = 'http://localhost:3001/api/auth/users';
+const API_AUTH_BASE = `${BASE}/auth`;
+const API_USERS_URL = `${API_AUTH_BASE}/users`;
 
 const UserManagementTab = () => {
   const [users, setUsers] = useState([]);
@@ -33,7 +35,7 @@ const UserManagementTab = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(API_URL, {
+      const res = await axios.get(API_USERS_URL, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
       });
       setUsers(res.data?.data?.users || []);
@@ -52,7 +54,7 @@ const UserManagementTab = () => {
   const handleDelete = async (userId) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
     try {
-      await axios.delete(`${API_URL}/${userId}`, {
+      await axios.delete(`${API_USERS_URL}/${userId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
       });
       setUsers((prev) => prev.filter((u) => u._id !== userId));
@@ -99,7 +101,7 @@ const UserManagementTab = () => {
           onCreatingRowSave={async ({ values, exitEditingMode }) => {
             try {
               const res = await axios.post(
-                'http://localhost:3000/api/auth/register',
+                `${API_AUTH_BASE}/register`,
                 values,
                 {
                   headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
@@ -116,7 +118,7 @@ const UserManagementTab = () => {
           onEditingRowSave={async ({ row, values, exitEditingMode }) => {
             try {
               const res = await axios.put(
-                `${API_URL}/${row.original._id}`,
+                `${API_USERS_URL}/${row.original._id}`,
                 values,
                 {
                   headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },

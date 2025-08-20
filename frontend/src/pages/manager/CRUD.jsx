@@ -4,8 +4,10 @@ import { MaterialReactTable } from 'material-react-table';
 import { MRT_Localization_EN } from 'material-react-table/locales/en';
 
 import axios from 'axios';
+import { API_BASE_URL as BASE } from '../../services/apiConfig';
 
-const API_URL = 'http://localhost:3001/api/auth/users';
+const API_AUTH_BASE = `${BASE}/auth`;
+const API_USERS_URL = `${API_AUTH_BASE}/users`;
 
 const CRUDPage = () => {
   const [users, setUsers] = useState([]);
@@ -27,7 +29,7 @@ const CRUDPage = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(API_URL, {
+      const res = await axios.get(API_USERS_URL, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
         },
@@ -85,7 +87,7 @@ const CRUDPage = () => {
                 onClick={() => {
                   if (window.confirm('Are you sure you want to delete this user?')) {
                     axios
-                      .delete(`${API_URL}/${row.original._id}`, {
+                      .delete(`${API_USERS_URL}/${row.original._id}`, {
                         headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
                       })
                       .then(() => setUsers(prev => prev.filter(u => u._id !== row.original._id)))
@@ -102,10 +104,10 @@ const CRUDPage = () => {
           onEditingRowSave={({ row, values, exitEditingMode }) => {
             const isEdit = !!row.original._id;
             const request = isEdit
-              ? axios.put(`${API_URL}/${row.original._id}`, values, {
+              ? axios.put(`${API_USERS_URL}/${row.original._id}`, values, {
                   headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
                 })
-              : axios.post('http://localhost:3001/api/auth/register', values, {
+              : axios.post(`${API_AUTH_BASE}/register`, values, {
                   headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
                 });
 
