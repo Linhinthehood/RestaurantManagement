@@ -98,14 +98,14 @@ const ReservationList = ({
         okText="Tạo"
         cancelText="Hủy"
       >
-        <Input
+        {/* <Input
           placeholder="Tên khách"
           value={formData.customerName}
           onChange={(e) =>
             setFormData({ ...formData, customerName: e.target.value })
           }
           className="mb-2"
-        />
+        /> */}
         <InputNumber
           min={1}
           value={formData.quantity}

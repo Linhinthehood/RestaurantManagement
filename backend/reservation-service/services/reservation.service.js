@@ -79,9 +79,20 @@ const reservationService = {
     return reservation;
   },
 
-  getAllReservations: async ({ dateStr, status }) => {
+  getAllReservations: async ({ dateStr, startDate, endDate, status }) => {
     const filter = {};
-    if (dateStr) {
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      // Đặt giờ phút giây của endDate về cuối ngày để bao gồm cả ngày đó
+      end.setHours(23, 59, 59, 999);
+      filter.checkInTime = {
+        $gte: start,
+        $lte: end,
+      };
+    }
+    // Giữ nguyên logic cũ: Lọc theo một ngày (dateStr)
+    else if (dateStr) {
       const date = new Date(dateStr);
       const nextDay = new Date(date);
       nextDay.setDate(date.getDate() + 1);

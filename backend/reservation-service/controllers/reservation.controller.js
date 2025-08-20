@@ -167,11 +167,13 @@ const reservationController = {
   },
 
   getAllReservations: async (req, res) => {
-    const { date, time, status } = req.query;
+    const { date, status, startDate, endDate } = req.query;
     try {
       const reservations = await reservationService.getAllReservations({
         dateStr: date,
-        timeStr: time,
+        status: status,
+        startDate,
+        endDate,
       });
       res.status(200).json({
         message: "Reservations fetched successfully",
