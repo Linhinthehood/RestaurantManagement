@@ -3,7 +3,7 @@ import tableHistoryModel from "../models/tableHistory.model.js";
 import { mockTables } from "../data/mockTables.js";
 import customerModel from "../models/customer.model.js";
 import mongoose from "mongoose";
-import tableServiceApi from "../utils/axiosInstance.js";
+import { tableServiceApi, paymentServiceApi } from "../utils/axiosInstance.js";
 import parseDateTime from "../utils/formatDateTime.js";
 
 const reservationService = {
@@ -79,9 +79,20 @@ const reservationService = {
     return reservation;
   },
 
-  getAllReservations: async ({ dateStr }) => {
+  getAllReservations: async ({ dateStr, startDate, endDate, status }) => {
     const filter = {};
-    if (dateStr) {
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      // Đặt giờ phút giây của endDate về cuối ngày để bao gồm cả ngày đó
+      end.setHours(23, 59, 59, 999);
+      filter.checkInTime = {
+        $gte: start,
+        $lte: end,
+      };
+    }
+    // Giữ nguyên logic cũ: Lọc theo một ngày (dateStr)
+    else if (dateStr) {
       const date = new Date(dateStr);
       const nextDay = new Date(date);
       nextDay.setDate(date.getDate() + 1);
@@ -91,13 +102,37 @@ const reservationService = {
       };
     }
 
-    const reservations = await reservationModel
-      .find(filter)
-      .populate("customerId", "name phone email")
-      .populate("tableHistory")
-      .sort({ checkInTime: 1 });
+    let reservations = [];
 
-    console.log("Reservations after populate:", reservations);
+    if (status === "completed") {
+      try {
+        const resp = await paymentServiceApi.get(`/payments?status=completed`);
+        const reservationIds = resp.data.payments.map((p) => p.reservationId);
+        console.log("KET QUA: ", resp);
+        reservations = await reservationModel
+          .find({
+            ...filter,
+            _id: { $in: reservationIds },
+          })
+          .populate("customerId", "name phone email")
+          .populate("tableHistory")
+          .sort({ checkInTime: 1 });
+      } catch (error) {
+        console.error("Error fetching completed reservtions: ", error.message);
+        return [];
+      }
+    } else {
+      if (status && status !== "All") {
+        filter.status = status;
+      }
+
+      reservations = await reservationModel
+        .find(filter)
+        .populate("customerId", "name phone email")
+        .populate("tableHistory")
+        .sort({ checkInTime: 1 });
+    }
+
     // Lấy danh sách tableId duy nhất
     const allTableIds = [
       ...new Set(
@@ -222,6 +257,7 @@ const reservationService = {
       .find({
         checkInTime: { $lte: expectedCheckOutTime },
         expectedCheckOutTime: { $gte: checkIn },
+        tableStatus: { $in: ["Occupied", "Pending", "Unavailable"] },
       })
       .select("tableId tableStatus reservationId");
 
@@ -241,9 +277,11 @@ const reservationService = {
         h.reservationId.equals(r._id)
       );
       if (history) {
-        reservationMap.set(history.tableId.toString(), {
-          reservationId: r._id,
-          customerName: r.customerId?.name || "Walk-in Customer",
+        conflictingHistories.forEach((h) => {
+          reservationMap.set(h.tableId.toString(), {
+            reservationId: r._id,
+            customerName: r.customerId?.name || "Walk-in Customer",
+          });
         });
       }
     });
