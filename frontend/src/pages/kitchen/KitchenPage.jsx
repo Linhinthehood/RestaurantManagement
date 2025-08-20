@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchOrderItems, clearSuccess, clearError } from "../../store/orderSlice";
 import KitchenDashboard from "../../components/kitchen/KitchenDashboard";
 import OrderItemCard from "../../components/kitchen/OrderItemCard";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import Alert from "../../components/Alert";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 const KitchenPage = () => {
   const dispatch = useDispatch();
@@ -24,6 +25,8 @@ const KitchenPage = () => {
   }, [ordersState.orderItems, ordersState.loading, ordersState.error, ordersState.success]);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef(null);
 
   // Fetch order items on component mount
   useEffect(() => {
@@ -60,6 +63,45 @@ const KitchenPage = () => {
       return () => clearTimeout(timer);
     }
   }, [error, dispatch]);
+
+  // Handle Fullscreen change events
+  useEffect(() => {
+    const handleFsChange = () => {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+      setIsFullscreen(!!fsEl);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    document.addEventListener('mozfullscreenchange', handleFsChange);
+    document.addEventListener('MSFullscreenChange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+      document.removeEventListener('mozfullscreenchange', handleFsChange);
+      document.removeEventListener('MSFullscreenChange', handleFsChange);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const isApiFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+
+    if (!isApiFullscreen && !isFullscreen) {
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+      else if (el.msRequestFullscreen) el.msRequestFullscreen();
+      else setIsFullscreen(true); // CSS fallback
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+      else if (document.msExitFullscreen) document.msExitFullscreen();
+      else setIsFullscreen(false); // CSS fallback
+    }
+  };
 
   // Filter order items based on selected status and exclude Served and Cancelled items
   const filteredOrderItems = selectedStatus === "all" 
@@ -115,7 +157,19 @@ const KitchenPage = () => {
   }
 
   return (
-    <div className="p-6">
+    <div
+      ref={containerRef}
+      className={`p-6 relative ${isFullscreen ? 'fixed inset-0 bg-white z-50 overflow-auto' : ''}`}
+    >
+      {/* Fullscreen toggle */}
+      <button
+        onClick={toggleFullscreen}
+        className="absolute top-4 right-4 p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 shadow"
+        aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+        title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+      >
+        {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+      </button>
       {/* Header */}
       {/* <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>

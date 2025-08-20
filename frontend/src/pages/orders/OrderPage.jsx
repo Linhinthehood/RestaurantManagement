@@ -11,7 +11,8 @@ import {
   AlertCircle,
   CheckCircle,
   UtensilsCrossed,
-  CreditCard
+  CreditCard,
+  ClipboardPenLine
 } from "lucide-react";
 import {
   fetchArrivedAndServingReservations,
@@ -372,7 +373,7 @@ const OrderPage = () => {
       </div> */}
       {/* Arrived Reservations (no order yet) */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-4 text-blue-700 flex items-center"><Plus className="w-5 h-5 mr-2" />Reservations without orders</h2>
+        <h2 className="text-lg font-semibold mb-4 text-blue-700 flex items-center"><ClipboardPenLine className="w-5 h-5 mr-2" />Reservations without orders</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
             <div className="col-span-full flex items-center justify-center p-8">

@@ -4,6 +4,7 @@ import UserManagementTab from '../../components/manager/UserManagementTab';
 import MenuManagementTab from '../../components/manager/MenuManagementTab';
 import ReservationManagementTab from '../../components/manager/ReservationManagementTab';
 import TableManagementTab from '../../components/manager/TableManagementTab';
+import DiscountManagementTab from '../../components/manager/DiscountManagementTab';
 
 const ManagerDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -14,6 +15,7 @@ const ManagerDashboard = () => {
     { id: 'menu', label: 'Menu Management', icon: '🍽️' },
     { id: 'reservations', label: 'Reservation Management', icon: '📅' },
     { id: 'tables', label: 'Table Management', icon: '🪑' },
+    { id: 'discounts', label: 'Discounts', icon: '🏷️' },
   ];
 
   const renderTabContent = () => {
@@ -28,6 +30,8 @@ const ManagerDashboard = () => {
         return <ReservationManagementTab />;
       case 'tables':
         return <TableManagementTab />;
+      case 'discounts':
+        return <DiscountManagementTab />;
       default:
         return <DashboardTab />;
     }

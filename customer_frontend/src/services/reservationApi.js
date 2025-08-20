@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_BASE_URL } from "./apiConfig";
 
-const API_BASE = "http://localhost:3002/api/v1/reservations";
+const API_BASE = `${API_BASE_URL}/v1/reservations`;
 
 export const createReservation = async (data) => {
   const res = await axios.post(`${API_BASE}`, data);

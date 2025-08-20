@@ -28,9 +28,13 @@ const DashboardTab = () => {
     recentPayments: []
   });
   const [allPayments, setAllPayments] = useState([]);
-  const [filteredPayments, setFilteredPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState(null);
+  const [showAllPayments, setShowAllPayments] = useState(false);
   
   // Filter states
   const [filterType, setFilterType] = useState('month');
@@ -38,25 +42,52 @@ const DashboardTab = () => {
     startDate: '',
     endDate: ''
   });
+  // Pagination states for payments table
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 0 });
+  const [tablePayments, setTablePayments] = useState([]);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  // Removed initial fetch; we fetch via the effect below to avoid double calls
 
   useEffect(() => {
     if (allPayments.length > 0) {
-      applyDateFilter();
+      processDashboardData(allPayments);
+    } else {
+      setDashboardData({
+        totalRevenue: 0,
+        totalPayments: 0,
+        completedPayments: 0,
+        pendingPayments: 0,
+        monthlyRevenue: [],
+        paymentMethods: [],
+        recentPayments: []
+      });
     }
-  }, [allPayments, filterType, customDateRange]);
+  }, [allPayments]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await paymentService.getAllPayments();
+      const params = { filterType };
+      if (filterType === 'custom' && customDateRange.startDate && customDateRange.endDate) {
+        params.startDate = customDateRange.startDate;
+        params.endDate = customDateRange.endDate;
+      }
+      const response = await paymentService.getAllPayments(params);
+      const paged = await paymentService.getPaymentsPaginated({ page, limit, ...params });
       
       if (response.success && response.data) {
         const payments = response.data;
         setAllPayments(payments);
+      }
+      if (paged && paged.success && Array.isArray(paged.data)) {
+        setTablePayments(paged.data);
+        if (paged.pagination) {
+          setPagination({ total: paged.pagination.total, totalPages: paged.pagination.totalPages });
+        } else {
+          setPagination({ total: paged.data.length, totalPages: 1 });
+        }
       }
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -109,27 +140,16 @@ const DashboardTab = () => {
     return { startDate, endDate };
   };
 
-  const applyDateFilter = () => {
-    const dateRange = getDateRange(filterType);
-    if (!dateRange) {
-      setFilteredPayments(allPayments);
-      processDashboardData(allPayments);
-      return;
-    }
-
-    const { startDate, endDate } = dateRange;
-    const filtered = allPayments.filter(payment => {
-      const paymentDate = new Date(payment.createdAt);
-      return paymentDate >= startDate && paymentDate < endDate;
-    });
-
-    setFilteredPayments(filtered);
-    processDashboardData(filtered);
-  };
-
   const handleApplyFilter = () => {
-    applyDateFilter();
+    // No-op: fetching is handled by useEffect on filter changes to avoid stale state
+    return;
   };
+
+  // Single unified refetch effect
+  useEffect(() => {
+    fetchDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType, customDateRange.startDate, customDateRange.endDate, page, limit]);
 
   const processDashboardData = (payments) => {
     // Calculate basic stats
@@ -268,6 +288,46 @@ const DashboardTab = () => {
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US');
+  };
+
+  const parseAmount = (amount) => {
+    if (!amount && amount !== 0) return 0;
+    if (typeof amount === 'object' && amount.$numberDecimal) {
+      const parsed = parseFloat(amount.$numberDecimal);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    const parsed = parseFloat(amount);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const openPaymentDetails = async (paymentId) => {
+    setIsDetailsOpen(true);
+    setDetailsLoading(true);
+    setDetailsError(null);
+    setSelectedPayment(null);
+    try {
+      const res = await paymentService.getPaymentById(paymentId);
+      if (res && res.success && res.data) {
+        setSelectedPayment(res.data);
+      } else if (res && res.data) {
+        setSelectedPayment(res.data);
+      } else if (res) {
+        // Direct object case
+        setSelectedPayment(res);
+      } else {
+        setDetailsError('Failed to load payment details');
+      }
+    } catch (e) {
+      setDetailsError('Failed to load payment details');
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const closePaymentDetails = () => {
+    setIsDetailsOpen(false);
+    setSelectedPayment(null);
+    setDetailsError(null);
   };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
@@ -415,8 +475,38 @@ const DashboardTab = () => {
 
       {/* Recent Payments Table */}
       <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Payments</h3>
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Payments</h3>
+            <p className="text-sm text-gray-500">Page {page} of {Math.max(1, pagination.totalPages || 1)} • {pagination.total} payments</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={limit}
+              onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+              className="px-2 py-1 text-sm border rounded"
+            >
+              <option value={10}>10 / page</option>
+              <option value={20}>20 / page</option>
+              <option value={50}>50 / page</option>
+            </select>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className={`px-3 py-2 text-sm rounded-lg ${page <= 1 ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+              >
+                Prev
+              </button>
+              <button
+                onClick={() => setPage((p) => (pagination.totalPages ? Math.min(pagination.totalPages, p + 1) : p + 1))}
+                disabled={pagination.totalPages ? page >= pagination.totalPages : false}
+                className={`px-3 py-2 text-sm rounded-lg ${(pagination.totalPages && page >= pagination.totalPages) ? 'bg-gray-100 text-gray-400' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -440,7 +530,7 @@ const DashboardTab = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {dashboardData.recentPayments.map((payment) => {
+              {(tablePayments || []).map((payment) => {
                 let finalAmount = 0;
                 if (payment.finalAmount && typeof payment.finalAmount === 'object' && payment.finalAmount.$numberDecimal) {
                   finalAmount = parseFloat(payment.finalAmount.$numberDecimal);
@@ -449,7 +539,11 @@ const DashboardTab = () => {
                 }
 
                 return (
-                  <tr key={payment._id}>
+                  <tr 
+                    key={payment._id}
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => openPaymentDetails(payment._id)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {payment.paymentCode}
                     </td>
@@ -480,6 +574,133 @@ const DashboardTab = () => {
           </table>
         </div>
       </div>
+      {isDetailsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md p-4">
+          <div className="absolute inset-0 bg-white/20" onClick={closePaymentDetails}></div>
+          <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-3xl mx-4 border border-white/20">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Payment Details</h3>
+                {selectedPayment?.paymentCode && (
+                  <p className="text-sm text-gray-600">Code: <span className="font-mono">{selectedPayment.paymentCode}</span></p>
+                )}
+              </div>
+              <button onClick={closePaymentDetails} className="p-2 rounded hover:bg-gray-100">✕</button>
+            </div>
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              {detailsLoading && (
+                <div className="flex items-center justify-center h-40">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+              {detailsError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+                  {detailsError}
+                </div>
+              )}
+              {!detailsLoading && !detailsError && selectedPayment && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">Status</p>
+                      <p className={`inline-flex mt-1 px-2 py-1 text-xs font-semibold rounded-full ${
+                        selectedPayment.status === 'Completed' 
+                          ? 'bg-green-100 text-green-800'
+                          : selectedPayment.status === 'Pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedPayment.status}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">Method</p>
+                      <p className="mt-1 font-medium">{selectedPayment.paymentMethod || 'N/A'}</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">Created At</p>
+                      <p className="mt-1 font-medium">{new Date(selectedPayment.createdAt).toLocaleString('vi-VN')}</p>
+                    </div>
+                    {selectedPayment.createdByUser && (
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-sm text-gray-600">Handled By</p>
+                        <p className="mt-1 font-medium">{selectedPayment.createdByUser.name} ({selectedPayment.createdByUser.role})</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {(() => {
+                    const originalAmount = parseAmount(selectedPayment.originalAmount);
+                    const taxAmount = parseAmount(selectedPayment.taxAmount);
+                    const discountAmount = parseAmount(selectedPayment.discountAmount);
+                    const depositAmount = parseAmount(selectedPayment.depositAmount);
+                    const finalAmount = parseAmount(selectedPayment.finalAmount);
+                    return (
+                      <div className="bg-white rounded-lg border border-gray-200 p-4">
+                        <h4 className="font-semibold mb-3">Payment Breakdown</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Food Total:</span>
+                            <span>{formatCurrency(originalAmount)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>VAT Tax (10%):</span>
+                            <span>+{formatCurrency(taxAmount)}</span>
+                          </div>
+                          {discountAmount > 0 && (
+                            <div className="flex justify-between text-red-600">
+                              <span>Discount:</span>
+                              <span>-{formatCurrency(discountAmount)}</span>
+                            </div>
+                          )}
+                          {depositAmount > 0 && (
+                            <div className="flex justify-between text-blue-600">
+                              <span>Deposit:</span>
+                              <span>-{formatCurrency(depositAmount)}</span>
+                            </div>
+                          )}
+                          <hr className="my-2" />
+                          <div className="flex justify-between font-medium text-lg">
+                            <span>Total Amount:</span>
+                            <span className="text-green-600">{formatCurrency(finalAmount)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {(selectedPayment.reservation || selectedPayment.customer) && (
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                      <h4 className="font-semibold mb-3">Customer & Reservation</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-600">Customer</p>
+                          <p className="font-medium">
+                            {selectedPayment.reservation?.customerId?.name || selectedPayment.customer?.name || 'N/A'}
+                          </p>
+                          <p className="text-gray-600 mt-2">Phone</p>
+                          <p className="font-medium">
+                            {selectedPayment.reservation?.customerId?.phone || selectedPayment.customer?.phone || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Guests</p>
+                          <p className="font-medium">{selectedPayment.reservation?.quantity || 'N/A'}</p>
+                          <p className="text-gray-600 mt-2">Tables</p>
+                          <p className="font-medium">{(selectedPayment.reservation?.tables || []).map(t => t.name).join(', ') || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t flex justify-end">
+              <button onClick={closePaymentDetails} className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

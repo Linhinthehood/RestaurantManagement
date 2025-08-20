@@ -25,6 +25,8 @@ Restaurant-Management/
 
 - **backend/**: Chứa toàn bộ mã nguồn backend (các microservice và API Gateway)
 - **frontend/**: Ứng dụng React giao diện người dùng
+  - `frontend/`: Ứng dụng React cho nhân viên (staff)
+  - `customer_frontend/`: Ứng dụng React cho khách hàng (customer)
 - **docker-compose.yml**: Quản lý các container
 
 ## Các service backend & cổng sử dụng
@@ -49,6 +51,7 @@ Restaurant-Management/
    - Bảng dữ liệu: `Payment`
 7. **api-gateway**: Định tuyến request giữa frontend và các service (**cổng 3000**)
 8. **frontend**: Giao diện người dùng (**cổng 4000**)
+9. **customer_frontend**: Giao diện khách hàng (**cổng 5173**)
 
 ## Hướng dẫn khởi chạy
 
@@ -79,12 +82,16 @@ npm install
 npm run dev
 ```
 
-### 5. (Hiện tại chưa cần dùng) Chạy toàn bộ hệ thống bằng Docker Compose
+### 5. (Tùy chọn) Chạy toàn bộ hệ thống bằng Docker Compose (bao gồm 2 frontend)
 - Ở thư mục gốc dự án:
   ```bash
   docker-compose up --build
   ```
 - Docker sẽ tự động build và chạy tất cả các service, MongoDB và frontend.
+
+#### Truy cập 2 ứng dụng frontend
+- Staff frontend (nhân viên): `http://localhost:4000`
+- Customer frontend (khách hàng): `http://localhost:5173`
 
 ### 6. Truy cập các service
 - User Service: http://localhost:3001
@@ -94,7 +101,8 @@ npm run dev
 - Table Service: http://localhost:3005
 - Payment Service: http://localhost:3006
 - API Gateway: http://localhost:3000
-- Frontend: http://localhost:4000
+- Staff Frontend: http://localhost:4000
+- Customer Frontend: http://localhost:5173
 
 > **Lưu ý:**
 > - Đảm bảo port trên máy bạn không bị chiếm trước khi chạy.
