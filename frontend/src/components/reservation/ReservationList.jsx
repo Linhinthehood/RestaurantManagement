@@ -91,12 +91,12 @@ const ReservationList = ({
         )}
       </div>
       <Modal
-        title="Tạo đơn Walk-in"
+        title="Create Walk-in Reservation"
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={handleCreateWalkIn}
-        okText="Tạo"
-        cancelText="Hủy"
+        okText="Create"
+        cancelText="Cancel"
       >
         {/* <Input
           placeholder="Tên khách"
@@ -111,7 +111,7 @@ const ReservationList = ({
           value={formData.quantity}
           onChange={(val) => setFormData({ ...formData, quantity: val })}
           className="mb-2 w-full"
-          placeholder="Số khách"
+          placeholder="Number of guests"
         />
         <DatePicker
           // Value nhận vào là đối tượng dayjs
@@ -142,7 +142,7 @@ const ReservationList = ({
           format="HH"
         />
         <Input.TextArea
-          placeholder="Ghi chú"
+          placeholder="Notes"
           value={formData.note}
           onChange={(e) => setFormData({ ...formData, note: e.target.value })}
         />

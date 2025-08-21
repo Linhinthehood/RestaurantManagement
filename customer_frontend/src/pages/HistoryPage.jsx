@@ -9,47 +9,52 @@ import {
   cancelReservation,
   getReservationsByPhone,
 } from "../services/reservationApi";
+import { useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
 
 const HistoryPage = () => {
-  const sample = [
-    {
-      id: "#A1B2C3",
-      date: "2025-08-20",
-      time: "19:00",
-      partySize: 2,
-      status: "Pending",
-    },
-    {
-      id: "#D4E5F6",
-      date: "2025-08-22",
-      time: "12:30",
-      partySize: 4,
-      status: "Confirmed",
-    },
-    {
-      id: "#G7H8I9",
-      date: "2025-07-30",
-      time: "18:00",
-      partySize: 3,
-      status: "Cancelled",
-    },
-  ];
-
+  const [searchParams] = useSearchParams();
   const [phone, setPhone] = useState("");
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchReservations = async () => {
-    if (!phone) return;
+    if (!phone) {
+      setReservations([]);
+      return;
+    }
     setIsLoading(true);
     try {
-      const data = await getReservationsByPhone(phone);
-      setReservations(data);
+      const res = await getReservationsByPhone(phone);
+      setReservations(res.reservations);
     } catch {
       setReservations([]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const phoneFromUrl = searchParams.get("phone");
+    if (phoneFromUrl) {
+      setPhone(phoneFromUrl);
+      const fetchInitialData = async () => {
+        setIsLoading(true);
+        try {
+          const data = await getReservationsByPhone(phoneFromUrl);
+          setReservations(data.reservations);
+        } catch (error) {
+          setReservations([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchInitialData();
+    }
+  }, [searchParams]);
+
+  const handlePhoneChange = (e) => {
+    setPhone(e.target.value);
   };
 
   const handleCancel = async (id) => {
@@ -84,7 +89,7 @@ const HistoryPage = () => {
                   id="search-phone"
                   placeholder="090xxxxxxx"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={handlePhoneChange}
                 />
               </div>
               {/* <div className="grid gap-1.5">
@@ -121,40 +126,49 @@ const HistoryPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {reservations.map((r) => (
-                <article
-                  key={r.id}
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-amber-100 bg-white p-4 shadow-sm"
-                >
-                  <div className="grid gap-1">
-                    <div className="text-sm text-gray-500">
-                      Single code:{" "}
-                      <span className="font-medium text-gray-800">{r.id}</span>
+              {reservations.map((r) => {
+                const checkInDate = new Date(r.checkInTime);
+                const date = checkInDate.toLocaleDateString();
+                const time = checkInDate.toLocaleDateString([], {
+                  hour: "2-digit",
+                });
+                return (
+                  <article
+                    key={r._id}
+                    className="flex items-center justify-between gap-4 rounded-2xl border border-amber-100 bg-white p-4 shadow-sm"
+                  >
+                    <div className="grid gap-1">
+                      <div className="text-sm text-gray-500">
+                        Single code:{" "}
+                        <span className="font-medium text-gray-800">
+                          {r._id}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-700">
+                        Date and time:{" "}
+                        <span className="font-medium">
+                          {date} • {time}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-700">
+                        Number of guests:{" "}
+                        <span className="font-medium">{r.quantity}</span>
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-700">
-                      Date and time:{" "}
-                      <span className="font-medium">
-                        {r.date} • {r.time}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <StatusBadge status={r.status} />
+                      {r.status === "Pending" && (
+                        <GhostButton
+                          onClick={() => handleCancel(r._id)}
+                          className="px-3 py-1.5"
+                        >
+                          Cancel order
+                        </GhostButton>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-700">
-                      Number of guests:{" "}
-                      <span className="font-medium">{r.quantity}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <StatusBadge status={r.status} />
-                    {r.status === "Pending" && (
-                      <GhostButton
-                        onClick={() => handleCancel(r._id)}
-                        className="px-3 py-1.5"
-                      >
-                        Cancel order
-                      </GhostButton>
-                    )}
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>

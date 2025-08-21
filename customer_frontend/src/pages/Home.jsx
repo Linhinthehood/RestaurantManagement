@@ -62,9 +62,7 @@ const Home = () => {
                 >
                   <div className="h-40 w-full bg-gradient-to-tr from-amber-100 via-amber-50 to-white" />
                   <div className="p-5">
-                    <h3 className="font-serif text-lg text-gray-900">
-                      {title}
-                    </h3>
+                    <h3 className="text-lg text-gray-900">{title}</h3>
                     <p className="mt-1 text-sm text-gray-600">
                       Fresh ingredients • Prepared the same day
                     </p>

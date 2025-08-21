@@ -2,7 +2,6 @@ import React from "react";
 import { useDrag } from "react-dnd";
 import { UserIcon, ClockIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { Button, message } from "antd";
-import axios from "axios";
 import reservationService from "../../services/reservationService";
 
 const ReservationListItem = ({ rsv, onUnassigned }) => {
@@ -19,10 +18,7 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
   }));
   const handleUnassign = async (tableId) => {
     try {
-      const res = await axios.put(
-        `http://localhost:3000/api/v1/reservations/${rsv._id}/unassign-table`,
-        { tableId }
-      );
+      const res = await reservationService.unassignTable(rsv._id, tableId);
       message.success(res.data.message);
       onUnassigned();
     } catch (error) {
@@ -35,7 +31,6 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
   const handleCheckIn = async () => {
     try {
       const res = await reservationService.checkInReservation(rsv._id);
-      console.log("Day la cho toi test: ", res);
       message.success(res.message);
       onUnassigned();
     } catch (err) {
@@ -93,7 +88,7 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
               </Button>
             ))}
           </div>
-          {rsv.status !== "Arrived" && rsv.status !== "Cancelled" && (
+          {rsv.status !== "Arrived" && rsv.status !== "Canceled" && (
             <Button size="small" type="primary" onClick={handleCheckIn}>
               Check-in
             </Button>

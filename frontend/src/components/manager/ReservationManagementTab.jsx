@@ -119,11 +119,9 @@ const ReservationManagementTab = () => {
         0
       );
 
-      const cancelled = allReservations.filter((r) => r.status === "Cancelled");
+      const canceled = allReservations.filter((r) => r.status === "Canceled");
       const noShowRate =
-        totalReservations > 0
-          ? (cancelled.length / totalReservations) * 100
-          : 0;
+        totalReservations > 0 ? (canceled.length / totalReservations) * 100 : 0;
 
       const trendData = {};
       allReservations.forEach((r) => {
@@ -200,7 +198,7 @@ const ReservationManagementTab = () => {
     setLoading(true);
     try {
       await reservationService.cancelReservation(id);
-      alert("Reservation cancelled successfully!");
+      alert("Reservation canceled successfully!");
       fetchReservations();
     } catch (err) {
       alert("Cancellation failed: " + err.message);

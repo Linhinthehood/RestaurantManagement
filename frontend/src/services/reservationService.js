@@ -40,7 +40,12 @@ export const reservationService = {
   },
 
   getAllReservations: async (params) => {
-    const response = await reservationAPI.get("/reservations", { params });
+    const response = await reservationAPI.get("/reservations", {
+      params,
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    });
     return response.data;
   },
 
@@ -63,9 +68,9 @@ export const reservationService = {
     return response.data;
   },
 
-  getAvailableTables: async (dateStr, timeStr) => {
+  getAvailableTables: async (date, time) => {
     const response = await reservationAPI.get("/reservations/available", {
-      params: { dateStr, timeStr },
+      params: { date, time },
     });
     return response.data;
   },

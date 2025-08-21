@@ -6,8 +6,8 @@ import {
   TimeFilter,
 } from "../../components/TableFilter";
 import { useEffect } from "react";
-import axios from "axios";
 import ReservationList from "../../components/reservation/ReservationList";
+import reservationService from "../../services/reservationService";
 
 const TableManagementPage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -29,14 +29,11 @@ const TableManagementPage = () => {
     setIsLoading(true);
     try {
       const formattedDate = selectedDate.toISOString().split("T")[0];
-
-      const res = await axios.get(
-        "http://localhost:3000/api/v1/reservations/available",
-        {
-          params: { date: formattedDate, time: selectedTime },
-        }
+      const res = await reservationService.getAvailableTables(
+        formattedDate,
+        selectedTime
       );
-      setTables(res.data.tables);
+      setTables(res.tables);
     } catch (error) {
       console.error("Error fetching available tables: ", error);
     } finally {
@@ -48,13 +45,9 @@ const TableManagementPage = () => {
     setIsLoading(true);
     try {
       const formattedDate = selectedDate.toISOString().split("T")[0];
-      const res = await axios.get("http://localhost:3000/api/v1/reservations", {
-        params: { date: formattedDate, time: selectedTime },
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-      });
-      setReservations(res.data.reservations || []);
+      const params = { date: formattedDate };
+      const res = await reservationService.getAllReservations(params);
+      setReservations(res.reservations || []);
     } catch (error) {
       console.error("Failed to fetch reservations:", error);
     } finally {

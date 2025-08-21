@@ -1,6 +1,6 @@
 import React from "react";
 
-const statuses = ["All", "Pending", "Arrived", "Completed", "Cancelled"];
+const statuses = ["All", "Pending", "Arrived", "Completed", "Canceled"];
 
 const ReservationStatusFilter = ({ currentStatus, onChange }) => {
   return (

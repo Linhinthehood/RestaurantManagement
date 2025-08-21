@@ -41,7 +41,7 @@ const reservationService = {
       const existingReservation = await reservationModel.findOne({
         customerId: customer._id,
         checkInTime: { $gte: fromTime, $lte: toTime },
-        status: { $ne: "Cancelled" },
+        status: { $ne: "Canceled" },
       });
       if (existingReservation) {
         throw new Error("Customer already have reservation at this time!");
@@ -106,7 +106,7 @@ const reservationService = {
 
     if (status === "completed") {
       try {
-        const resp = await paymentServiceApi.get(`/payments?status=completed`);
+        const resp = await paymentServiceApi.get(`/payments?status=Completed`);
         const reservationIds = resp.data.payments.map((p) => p.reservationId);
         console.log("KET QUA: ", resp);
         reservations = await reservationModel

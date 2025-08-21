@@ -103,6 +103,7 @@ const ReservationPage = () => {
                       placeholder="ban@email.com"
                       value={form.customerEmail}
                       onChange={onChange}
+                      required
                     />
                   </div>
                 </div>
@@ -197,11 +198,17 @@ const ReservationPage = () => {
                     <Button
                       as="button"
                       className="px-3 py-2"
-                      onClick={() =>
+                      onClick={() => {
+                        console.log(
+                          "Giá trị phone ngay trước khi navigate:",
+                          form.customerPhone
+                        );
                         navigate(
-                          `/history?phone=${encodeURIComponent(form.phone)}`
-                        )
-                      }
+                          `/history?phone=${encodeURIComponent(
+                            form.customerPhone
+                          )}`
+                        );
+                      }}
                     >
                       View history
                     </Button>
