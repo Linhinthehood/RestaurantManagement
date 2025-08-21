@@ -1,0 +1,193 @@
+# Render Blueprint: Multi-service deployment for Restaurant-Management
+
+services:
+  # ============ API Gateway ============
+  - type: web
+    name: api-gateway
+    env: docker
+    rootDir: backend/api-gateway
+    plan: free
+    autoDeploy: true
+    # Exposes port 3000 (from Dockerfile / app)
+    envVars:
+      - key: PORT
+        value: 3000
+      # Optional: provide service targets if you modify the gateway to read envs
+      - key: USER_SERVICE_URL
+        sync: false
+      - key: RESERVATION_SERVICE_URL
+        sync: false
+      - key: FOOD_SERVICE_URL
+        sync: false
+      - key: ORDER_SERVICE_URL
+        sync: false
+      - key: TABLE_SERVICE_URL
+        sync: false
+      - key: PAYMENT_SERVICE_URL
+        sync: false
+
+  # ============ User Service (3001) ============
+  - type: web
+    name: user-service
+    env: node
+    rootDir: backend/user-service
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: JWT_EXPIRE_TIME
+        value: 1d
+      - key: NODE_ENV
+        value: production
+
+  # ============ Reservation Service (3002) ============
+  - type: web
+    name: reservation-service
+    env: node
+    rootDir: backend/reservation-service
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PORT
+        value: 3002
+      - key: MONGO_URI
+        sync: false
+      - key: USER_SERVICE_URL
+        sync: false
+      - key: TABLE_SERVICE_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  # ============ Food Service (3003) ============
+  - type: web
+    name: food-service
+    env: node
+    rootDir: backend/food-service
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PORT
+        value: 3003
+      - key: MONGO_URI
+        sync: false
+      - key: USER_SERVICE_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  # ============ Order Service (3004) ============
+  - type: web
+    name: order-service
+    env: node
+    rootDir: backend/order-service
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PORT
+        value: 3004
+      - key: MONGO_URI
+        sync: false
+      - key: USER_SERVICE_URL
+        sync: false
+      - key: TABLE_SERVICE_URL
+        sync: false
+      - key: RESERVATION_SERVICE_URL
+        sync: false
+      - key: FOOD_SERVICE_URL
+        sync: false
+      - key: PAYMENT_SERVICE_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  # ============ Table Service (3005) ============
+  - type: web
+    name: table-service
+    env: node
+    rootDir: backend/table-service
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PORT
+        value: 3005
+      - key: MONGO_URI
+        sync: false
+      - key: USER_SERVICE_URL
+        sync: false
+      - key: RESERVATION_SERVICE_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  # ============ Payment Service (3006) ============
+  - type: web
+    name: payment-service
+    env: node
+    rootDir: backend/payment-service
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PORT
+        value: 3006
+      - key: MONGODB_URI
+        sync: false
+      - key: USER_SERVICE_URL
+        sync: false
+      - key: ORDER_SERVICE_URL
+        sync: false
+      - key: RESERVATION_SERVICE_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  # # ============ Staff Frontend (Vite) ============
+  # - type: web
+  #   name: staff-frontend
+  #   env: static
+  #   rootDir: frontend
+  #   plan: free
+  #   autoDeploy: true
+  #   buildCommand: npm install && npm run build
+  #   staticPublishPath: dist
+  #   envVars:
+  #     - key: VITE_API_BASE_URL
+  #       sync: false
+
+  # # ============ Customer Frontend (Vite) ============
+  # - type: web
+  #   name: customer-frontend
+  #   env: static
+  #   rootDir: customer_frontend
+  #   plan: free
+  #   autoDeploy: true
+  #   buildCommand: npm install && npm run build
+  #   staticPublishPath: dist
+  #   envVars:
+  #     - key: VITE_API_BASE_URL
+  #       sync: false
+
+
