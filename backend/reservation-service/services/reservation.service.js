@@ -1,6 +1,5 @@
 import reservationModel from "../models/reservation.model.js";
 import tableHistoryModel from "../models/tableHistory.model.js";
-import { mockTables } from "../data/mockTables.js";
 import customerModel from "../models/customer.model.js";
 import mongoose from "mongoose";
 import { tableServiceApi, paymentServiceApi } from "../utils/axiosInstance.js";
