@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // User service URL
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:3001';
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL;
 
 // Helper function để gọi API đến user service
 const verifyTokenWithUserService = async (token) => {

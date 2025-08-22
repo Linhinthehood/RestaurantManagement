@@ -1,5 +1,4 @@
 import tableModel from "../models/table.model.js";
-import tableService from "../services/table.service.js";
 
 const tableController = {
   createTable: async (req, res) => {

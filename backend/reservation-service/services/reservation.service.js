@@ -106,7 +106,7 @@ const reservationService = {
 
     if (status === "completed") {
       try {
-        const resp = await paymentServiceApi.get(`/payments?status=completed`);
+        const resp = await paymentServiceApi.get(`/api/payments?status=completed`);
         const reservationIds = resp.data.payments.map((p) => p.reservationId);
         console.log("KET QUA: ", resp);
         reservations = await reservationModel
@@ -146,7 +146,7 @@ const reservationService = {
     if (allTableIds.length > 0) {
       try {
         const resp = await tableServiceApi.get(
-          `/tables?ids=${allTableIds.join(",")}`
+          `/api/v1/tables?ids=${allTableIds.join(",")}`
         );
         if (Array.isArray(resp.data.tables)) {
           tableMap = Object.fromEntries(
@@ -203,7 +203,7 @@ const reservationService = {
     if (tableIds.length > 0) {
       try {
         const resp = await tableServiceApi.get(
-          `/tables?ids=${tableIds.join(",")}`
+          `/api/v1/tables?ids=${tableIds.join(",")}`
         );
         if (Array.isArray(resp.data.tables)) {
           tableMap = Object.fromEntries(
@@ -290,7 +290,7 @@ const reservationService = {
     conflictingHistories.forEach((h) => {
       tableStatusMap.set(h.tableId.toString(), h.tableStatus);
     });
-    const response = await tableServiceApi.get("/tables/");
+    const response = await tableServiceApi.get("/api/v1/tables/");
     const allTables = response.data.tables;
     if (!Array.isArray(allTables)) {
       throw new Error("Invalid table data received from table service");
@@ -330,7 +330,7 @@ const reservationService = {
     // Gọi sang table-service để lấy thông tin bàn
     let tableInfo = null;
     try {
-      const res = await tableServiceApi.get(`/tables/${tableId}`);
+      const res = await tableServiceApi.get(`/api/v1/tables/${tableId}`);
       tableInfo = res.data.table;
       console.log("TableInfo: ", tableInfo);
     } catch (e) {

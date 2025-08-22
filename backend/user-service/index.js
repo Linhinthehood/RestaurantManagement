@@ -11,7 +11,7 @@ dotenv.config();
 connectToDB();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
 // Middleware
 app.use(cors());
@@ -53,5 +53,4 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 User Service is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  console.log(`📝 API Documentation: http://localhost:${PORT}/api/auth`);
 });
