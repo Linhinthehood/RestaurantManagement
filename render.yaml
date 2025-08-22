@@ -173,7 +173,7 @@ services:
         value: production
 
   # ============ Staff Frontend (Vite) ============
-  - type: static
+  - type: static-site
     name: staff-frontend
     rootDir: frontend
     plan: free
@@ -185,7 +185,7 @@ services:
         sync: false
 
   # ============ Customer Frontend (Vite) ============
-  - type: static
+  - type: static-site
     name: customer-frontend
     rootDir: customer_frontend
     plan: free
