@@ -17,7 +17,7 @@ const DateFilter = ({ selectedDate, onSelectDate }) => {
   };
 
   return (
-    <div className="w-2/3 flex space-x-4 justify-between bg-gray-100 rounded shadow overflow-auto">
+    <div className="w-2/3 flex space-x-4 justify-between items-center bg-gray-100 rounded shadow overflow-auto">
       {getNextDays(7).map(({ date, day }) => (
         <button
           key={date.toISOString()}

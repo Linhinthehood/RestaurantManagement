@@ -19,6 +19,7 @@ services:
       - MONGO_URI=mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_CLUSTER}/${RESERVATION_DB}
       - USER_SERVICE_URL=http://user-service:3001
       - TABLE_SERVICE_URL=http://table-service:3005/api/v1
+      - PAYMENT_SERVICE_URL=http://payment-service:3006/api/payments
       - NODE_ENV=development
     # depends_on:
     #   - mongo

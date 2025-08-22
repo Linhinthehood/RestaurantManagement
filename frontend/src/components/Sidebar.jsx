@@ -5,7 +5,9 @@ import { useSelector } from "react-redux";
 const Sidebar = () => {
   const { user } = useSelector((state) => state.user);
   const role = user?.role; // Không convert về lowercase nữa
-  const menuItems = (roleConfig[role] || []).filter(item => item.label && item.label.trim() !== "");
+  const menuItems = (roleConfig[role] || []).filter(
+    (item) => item.label && item.label.trim() !== ""
+  );
   return (
     <div className="w-64 bg-gray-800 text-white h-full p-4">
       <h2 className="text-xl font-bold mb-6">Restaurant System</h2>

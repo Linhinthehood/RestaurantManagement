@@ -3,8 +3,9 @@ import { useDrag } from "react-dnd";
 import { UserIcon, ClockIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { Button, message } from "antd";
 import reservationService from "../../services/reservationService";
+import { getStatusColorClass } from "../../utils/statusColor";
 
-const ReservationListItem = ({ rsv, onUnassigned }) => {
+const ReservationListItem = ({ rsv, onReservationChanged }) => {
   const [{ isDragging }, dragRef] = useDrag(() => ({
     type: "reservation",
     item: {
@@ -20,7 +21,9 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
     try {
       const res = await reservationService.unassignTable(rsv._id, tableId);
       message.success(res.data.message);
-      onUnassigned();
+      if (onReservationChanged) {
+        onReservationChanged();
+      }
     } catch (error) {
       message.error(
         error.response?.data?.message || "Failed to unassign table"
@@ -32,11 +35,15 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
     try {
       const res = await reservationService.checkInReservation(rsv._id);
       message.success(res.message);
-      onUnassigned();
+      if (onReservationChanged) {
+        onReservationChanged();
+      }
     } catch (err) {
       message.error(err.response?.data?.message || "Failed to check-in");
     }
   };
+  const statusClasses = getStatusColorClass(rsv.status);
+  console.log("Status:", rsv.status, "Classes:", statusClasses);
 
   return (
     <div
@@ -45,7 +52,9 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
         isDragging ? "opacity-90 scale-95" : ""
       }`}
     >
-      <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4 shadow-sm bg-white hover:shadow-md transition">
+      <div
+        className={`flex items-center justify-between border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition ${statusClasses.bg}`}
+      >
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-gray-700 font-medium">
             <UserIcon className="h-5 w-5 text-blue-500" />

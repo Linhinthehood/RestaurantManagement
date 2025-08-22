@@ -80,6 +80,7 @@ const reservationService = {
   },
 
   getAllReservations: async ({ dateStr, startDate, endDate, status }) => {
+    console.log("Received status:", status);
     const filter = {};
     if (startDate && endDate) {
       const start = new Date(startDate);
@@ -103,12 +104,14 @@ const reservationService = {
     }
 
     let reservations = [];
-
-    if (status === "completed") {
+    if (status === "Completed") {
       try {
-        const resp = await paymentServiceApi.get(`/payments?status=Completed`);
+        const resp = await paymentServiceApi.get(
+          `?status=Completed&filterType=custom&startDate=${dateStr}&endDate=${dateStr}`
+        );
+        console.log("Response from payment service:", resp.data);
         const reservationIds = resp.data.payments.map((p) => p.reservationId);
-        console.log("KET QUA: ", resp);
+        console.log("Mapped reservation IDs:", reservationIds);
         reservations = await reservationModel
           .find({
             ...filter,

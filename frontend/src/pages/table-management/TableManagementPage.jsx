@@ -19,11 +19,12 @@ const TableManagementPage = () => {
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [reservationRefreshTrigger, setReservationRefreshTrigger] = useState(0);
+  const [filterStatus, setFilterStatus] = useState("All");
 
   useEffect(() => {
     fetchAvailableTables();
     fetchReservations();
-  }, [selectedDate, selectedTime, reservationRefreshTrigger]);
+  }, [selectedDate, selectedTime, reservationRefreshTrigger, filterStatus]);
 
   const fetchAvailableTables = async () => {
     setIsLoading(true);
@@ -45,7 +46,7 @@ const TableManagementPage = () => {
     setIsLoading(true);
     try {
       const formattedDate = selectedDate.toISOString().split("T")[0];
-      const params = { date: formattedDate };
+      const params = { date: formattedDate, status: filterStatus };
       const res = await reservationService.getAllReservations(params);
       setReservations(res.reservations || []);
     } catch (error) {
@@ -60,8 +61,8 @@ const TableManagementPage = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex items-center gap-4 bg-white px-4 py-2">
+    <div className="p-2">
+      <div className="flex items-center gap-4 bg-white px-4">
         <DateFilter
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
@@ -72,10 +73,12 @@ const TableManagementPage = () => {
         />
       </div>
       <div className="flex mt-4">
-        <TimeFilter
-          selectedTime={selectedTime}
-          onSelectTime={setSelectedTime}
-        />
+        <div className="h-[500px] overflow-y-auto pr-2 custom-scroll">
+          <TimeFilter
+            selectedTime={selectedTime}
+            onSelectTime={setSelectedTime}
+          />
+        </div>
         <div className="flex-1 bg-gray-100 rounded-xl shadow p-4">
           <h2 className="text-xl font-bold mb-2">🪑Tables</h2>
           <div className="grid grid-cols-3 gap-4 p-4">
@@ -100,8 +103,9 @@ const TableManagementPage = () => {
             reservations={reservations}
             selectedDate={selectedDate}
             selectedTime={selectedTime}
-            refreshTrigger={reservationRefreshTrigger}
             onReservationChanged={handleReservationChanged}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
           />
         </div>
       </div>
