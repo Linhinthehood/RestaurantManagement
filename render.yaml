@@ -177,7 +177,6 @@ services:
     name: staff-frontend
     env: static
     rootDir: frontend
-    plan: free
     autoDeploy: true
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
@@ -190,7 +189,6 @@ services:
     name: customer-frontend
     env: static
     rootDir: customer_frontend
-    plan: free
     autoDeploy: true
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
