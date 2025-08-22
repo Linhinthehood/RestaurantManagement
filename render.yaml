@@ -1,30 +1,38 @@
 # Render Blueprint: Multi-service deployment for Restaurant-Management
 
 services:
-  # # ============ API Gateway ============
-  # - type: web
-  #   name: api-gateway
-  #   env: docker
-  #   rootDir: backend/api-gateway
-  #   plan: free
-  #   autoDeploy: true
-  #   # Exposes port 3000 (from Dockerfile / app)
-  #   envVars:
-  #     - key: PORT
-  #       value: 3000
-  #     # Optional: provide service targets if you modify the gateway to read envs
-  #     - key: USER_SERVICE_URL
-  #       sync: false
-  #     - key: RESERVATION_SERVICE_URL
-  #       sync: false
-  #     - key: FOOD_SERVICE_URL
-  #       sync: false
-  #     - key: ORDER_SERVICE_URL
-  #       sync: false
-  #     - key: TABLE_SERVICE_URL
-  #       sync: false
-  #     - key: PAYMENT_SERVICE_URL
-  #       sync: false
+  # ============ API Gateway ============
+  - type: web
+    name: api-gateway
+    env: node
+    rootDir: backend/api-gateway
+    plan: free
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      # Service URLs - Update these after all services are deployed
+      - key: USER_SERVICE_URL
+        sync: false
+      - key: RESERVATION_SERVICE_URL
+        sync: false
+      - key: FOOD_SERVICE_URL
+        sync: false
+      - key: ORDER_SERVICE_URL
+        sync: false
+      - key: TABLE_SERVICE_URL
+        sync: false
+      - key: PAYMENT_SERVICE_URL
+        sync: false
+      # Frontend URLs for CORS - Update these after frontends are deployed
+      - key: STAFF_FRONTEND_URL
+        sync: false
+      - key: CUSTOMER_FRONTEND_URL
+        sync: false
 
   # ============ User Service (3001) ============
   - type: web
@@ -153,7 +161,7 @@ services:
     envVars:
       - key: PORT
         value: 3006
-      - key: MONGODB_URI
+      - key: MONGO_URI
         sync: false
       - key: USER_SERVICE_URL
         sync: false

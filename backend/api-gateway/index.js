@@ -6,12 +6,54 @@ require("dotenv").config();
 // Import raw-body for handling multipart requests
 const getRawBody = require('raw-body');
 
-// Import raw-body for handling multipart requests
-
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// CORS configuration for production and development
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Get allowed origins from environment variables
+    const allowedOrigins = [
+      // Production frontend URLs from environment
+      process.env.STAFF_FRONTEND_URL,
+      process.env.CUSTOMER_FRONTEND_URL,
+      // Development URLs (always allowed)
+      'http://localhost:4000',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ].filter(Boolean); // Remove undefined values
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log(`CORS blocked origin: ${origin}`);
+      console.log(`Allowed origins:`, allowedOrigins);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+app.use(cors(corsOptions));
+
+// Service URLs configuration
+const serviceUrls = {
+  userService: process.env.USER_SERVICE_URL,
+  reservationService: process.env.RESERVATION_SERVICE_URL,
+  foodService: process.env.FOOD_SERVICE_URL,
+  orderService: process.env.ORDER_SERVICE_URL,
+  tableService: process.env.TABLE_SERVICE_URL,
+  paymentService: process.env.PAYMENT_SERVICE_URL
+};
+
+// Log service configuration
+console.log('🚀 API Gateway Configuration:');
+console.log('Service URLs:', serviceUrls);
 
 // Proxy configuration với timeout và error handling
 const proxyOptions = {
@@ -73,7 +115,6 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Handle multipart/form-data for file uploads
-// Handle multipart/form-data for file uploads
 app.use(async (req, res, next) => {
   if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
     try {
@@ -101,7 +142,7 @@ app.use(
   "/api/auth",
   createProxyMiddleware({
     ...proxyOptions,
-    target: "http://user-service:3001",
+    target: serviceUrls.userService,
     pathRewrite: { "^/api/auth": "/api/auth" },
   })
 );
@@ -110,7 +151,7 @@ app.use(
   "/api/v1/reservations",
   createProxyMiddleware({
     ...proxyOptions,
-    target: "http://reservation-service:3002",
+    target: serviceUrls.reservationService,
     pathRewrite: { "^/api/v1/reservations": "/api/v1/reservations" },
   })
 );
@@ -119,7 +160,7 @@ app.use(
   "/api/v1/customers",
   createProxyMiddleware({
     ...proxyOptions,
-    target: "http://reservation-service:3002",
+    target: serviceUrls.reservationService,
     pathRewrite: { "^/api/v1/customers": "/api/v1/customers" },
   })
 );
@@ -128,7 +169,7 @@ app.use(
   "/api/foods",
   createProxyMiddleware({
     ...proxyOptions,
-    target: "http://food-service:3003",
+    target: serviceUrls.foodService,
     pathRewrite: { "^/api/foods": "/api/foods" },
   })
 );
@@ -137,7 +178,7 @@ app.use(
   "/api/categories",
   createProxyMiddleware({
     ...proxyOptions,
-    target: "http://food-service:3003",
+    target: serviceUrls.foodService,
     pathRewrite: { "^/api/categories": "/api/categories" },
   })
 );
@@ -146,7 +187,7 @@ app.use(
   "/api/orders",
   createProxyMiddleware({
     ...proxyOptions,
-    target: "http://order-service:3004",
+    target: serviceUrls.orderService,
     pathRewrite: { "^/api/orders": "/api/orders" },
   })
 );
@@ -155,7 +196,7 @@ app.use(
   "/api/order-items",
   createProxyMiddleware({
     ...proxyOptions,
-    target: "http://order-service:3004",
+    target: serviceUrls.orderService,
     pathRewrite: { "^/api/order-items": "/api/order-items" },
   })
 );
@@ -164,7 +205,7 @@ app.use(
   "/api/v1/tables",
   createProxyMiddleware({
     ...proxyOptions,
-    target: "http://table-service:3005",
+    target: serviceUrls.tableService,
     pathRewrite: { "^/api/v1/tables": "/api/v1/tables" },
   })
 );
@@ -173,7 +214,7 @@ app.use(
   "/api/payments",
   createProxyMiddleware({
     ...proxyOptions,
-    target: "http://payment-service:3006",
+    target: serviceUrls.paymentService,
     pathRewrite: { "^/api/payments": "/api/payments" },
   })
 );
@@ -182,7 +223,7 @@ app.use(
   "/api/discounts",
   createProxyMiddleware({
     ...proxyOptions,
-    target: "http://payment-service:3006",
+    target: serviceUrls.paymentService,
     pathRewrite: { "^/api/discounts": "/api/discounts" },
   })
 );
@@ -192,14 +233,25 @@ app.get("/", (req, res) => {
   res.json({
     message: "API Gateway is running!",
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT,
     services: {
-      "user-service": "http://user-service:3001",
-      "reservation-service": "http://reservation-service:3002",
-      "food-service": "http://food-service:3003",
-      "order-service": "http://order-service:3004",
-      "table-service": "http://table-service:3005",
-      "payment-service": "http://payment-service:3006",
+      "user-service": serviceUrls.userService,
+      "reservation-service": serviceUrls.reservationService,
+      "food-service": serviceUrls.foodService,
+      "order-service": serviceUrls.orderService,
+      "table-service": serviceUrls.tableService,
+      "payment-service": serviceUrls.paymentService,
     },
+  });
+});
+
+// Additional health check endpoint for Render
+app.get("/healthz", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
 });
 
@@ -225,4 +277,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 API Gateway đang chạy tại http://localhost:${PORT}`);
   console.log(`📝 Health check: http://localhost:${PORT}/`);
+  console.log(`🏥 Health check (Render): http://localhost:${PORT}/healthz`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
