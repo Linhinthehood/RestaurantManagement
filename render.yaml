@@ -175,11 +175,11 @@ services:
   # ============ Staff Frontend (Vite) ============
   - type: web
     name: staff-frontend
-    env: static
+    runtime: static
     rootDir: frontend
     plan: free
     autoDeploy: true
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     publishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
@@ -188,11 +188,11 @@ services:
   # ============ Customer Frontend (Vite) ============
   - type: web
     name: customer-frontend
-    env: static
+    runtime: static
     rootDir: customer_frontend
     plan: free
     autoDeploy: true
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     publishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
