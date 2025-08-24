@@ -142,6 +142,7 @@ const ReservationList = ({
               }}
               className="w-full"
               format="HH:mm"
+              minuteStep={60}
             />
           </Form.Item>
 

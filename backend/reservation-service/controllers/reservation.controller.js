@@ -159,6 +159,15 @@ const reservationController = {
           success: false,
         });
       }
+      if (
+        error.message ===
+        "Check-in is only allowed within 30 minutes before or after the reservation time."
+      ) {
+        return res.status(409).json({
+          message: error.message,
+          success: false,
+        });
+      }
       res.status(500).json({
         message: "Internal server error",
         success: false,

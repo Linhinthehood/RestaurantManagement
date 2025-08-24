@@ -34,6 +34,15 @@ const ReservationListItem = ({ rsv, onReservationChanged }) => {
   const handleCheckIn = async () => {
     try {
       const res = await reservationService.checkInReservation(rsv._id);
+      const now = new Date();
+      const checkInTime = new Date(rsv.checkInTime);
+      const lowerBound = new Date(checkInTime.getTime() - 30 * 60 * 1000);
+      const upperBound = new Date(checkInTime.getTime() + 30 * 60 * 1000);
+      console.log("res", res);
+      if (now < lowerBound || now > upperBound) {
+        message.error(error.message);
+        return;
+      }
       message.success(res.message);
       if (onReservationChanged) {
         onReservationChanged();

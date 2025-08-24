@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import reservationService from "../../services/reservationService";
 import DateFilterComponent from "./DateFilterComponent";
+import { toLocalTime } from "../../utils/formatTime";
 
 // Colors for the charts
 const COLORS = [
@@ -125,10 +126,10 @@ const ReservationManagementTab = () => {
 
       const trendData = {};
       allReservations.forEach((r) => {
-        const checkInTime = new Date(r.checkInTime);
-        if (isNaN(checkInTime.getTime())) return;
+        const checkInTime = toLocalTime(r.checkInTime).utc();
+        if (!checkInTime || !checkInTime.isValid()) return;
 
-        const dateKey = checkInTime.toISOString().split("T")[0];
+        const dateKey = checkInTime.format("YYYY-MM-DD");
         if (!trendData[dateKey]) {
           trendData[dateKey] = { date: dateKey, count: 0 };
         }
@@ -192,44 +193,44 @@ const ReservationManagementTab = () => {
   };
 
   /** ---------------- HANDLERS ---------------- */
-  const handleCancelReservation = async (id) => {
-    if (!window.confirm("Are you sure you want to cancel this reservation?"))
-      return;
-    setLoading(true);
-    try {
-      await reservationService.cancelReservation(id);
-      alert("Reservation canceled successfully!");
-      fetchReservations();
-    } catch (err) {
-      alert("Cancellation failed: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const handleCancelReservation = async (id) => {
+  //   if (!window.confirm("Are you sure you want to cancel this reservation?"))
+  //     return;
+  //   setLoading(true);
+  //   try {
+  //     await reservationService.cancelReservation(id);
+  //     alert("Reservation canceled successfully!");
+  //     fetchReservations();
+  //   } catch (err) {
+  //     alert("Cancellation failed: " + err.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const handleCheckIn = async (id) => {
-    setLoading(true);
-    try {
-      await reservationService.checkInReservation(id);
-      alert("Check-in successful!");
-      fetchReservations();
-    } catch (err) {
-      alert("Check-in failed: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const handleCheckIn = async (id) => {
+  //   setLoading(true);
+  //   try {
+  //     await reservationService.checkInReservation(id);
+  //     alert("Check-in successful!");
+  //     fetchReservations();
+  //   } catch (err) {
+  //     alert("Check-in failed: " + err.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const handleAssignTable = async (tableId) => {
-    if (!selectedReservation) return;
-    try {
-      await reservationService.assignTable(selectedReservation._id, tableId);
-      alert("Table assigned successfully!");
-      await fetchReservationDetails(selectedReservation._id);
-    } catch (err) {
-      alert("Table assignment failed: " + err.message);
-    }
-  };
+  // const handleAssignTable = async (tableId) => {
+  //   if (!selectedReservation) return;
+  //   try {
+  //     await reservationService.assignTable(selectedReservation._id, tableId);
+  //     alert("Table assigned successfully!");
+  //     await fetchReservationDetails(selectedReservation._id);
+  //   } catch (err) {
+  //     alert("Table assignment failed: " + err.message);
+  //   }
+  // };
 
   const handleOpenDetails = (id) => {
     setIsDetailsOpen(true);
@@ -375,7 +376,7 @@ const ReservationManagementTab = () => {
                     {res.quantity}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {new Date(res.checkInTime).toLocaleString()}
+                    {toLocalTime(res.checkInTime).toLocaleString()}
                   </td>
                   <td className="px-6 py-4">
                     <span
@@ -399,7 +400,7 @@ const ReservationManagementTab = () => {
                     >
                       View
                     </button>
-                    {res.status === "Pending" && (
+                    {/* {res.status === "Pending" && (
                       <button
                         onClick={() => handleCancelReservation(res._id)}
                         className="text-red-600 hover:text-red-900 mr-2"
@@ -415,7 +416,7 @@ const ReservationManagementTab = () => {
                         >
                           Check-in
                         </button>
-                      )}
+                      )} */}
                   </td>
                 </tr>
               ))}

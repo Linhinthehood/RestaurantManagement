@@ -1,6 +1,5 @@
 import reservationModel from "../models/reservation.model.js";
 import tableHistoryModel from "../models/tableHistory.model.js";
-import { mockTables } from "../data/mockTables.js";
 import customerModel from "../models/customer.model.js";
 import mongoose from "mongoose";
 import { tableServiceApi, paymentServiceApi } from "../utils/axiosInstance.js";
@@ -448,6 +447,16 @@ const reservationService = {
     console.log(isAssignReservation);
     if (!isAssignReservation) {
       throw new Error("Reservation didn't assigned");
+    }
+    const now = new Date();
+    const checkInTime = new Date(reservation.checkInTime);
+    const lowerBound = new Date(checkInTime.getTime() - 30 * 60 * 1000);
+    const upperBound = new Date(checkInTime.getTime() + 30 * 60 * 1000);
+
+    if (now < lowerBound || now > upperBound) {
+      throw new Error(
+        "Check-in is only allowed within 30 minutes before or after the reservation time."
+      );
     }
     (reservation.status = "Arrived"),
       reservation.statusHistory.push({
