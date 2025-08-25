@@ -1,12 +1,19 @@
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 
-dayjs.extend(utc);
-dayjs.extend(timezone);
+// Format date thành dd/mm/yyyy (không đổi múi giờ)
+export const formatDate = (date) => {
+  if (!date) return "";
+  return dayjs(date).format("DD/MM/YYYY");
+};
 
-// Chuyển UTC -> giờ VN (Asia/Ho_Chi_Minh)
-export const toLocalTime = (utcDate) => {
-  if (!utcDate) return null;
-  return dayjs(utcDate).tz("Asia/Ho_Chi_Minh");
+// Format time thành HH:mm (không đổi múi giờ)
+export const formatTime = (date) => {
+  if (!date) return "";
+  return dayjs(date).format("HH:mm");
+};
+
+// Format date và time thành dd/mm/yyyy • HH:mm (không đổi múi giờ)
+export const formatDateTime = (date) => {
+  if (!date) return "";
+  return dayjs(date).format("DD/MM/YYYY • HH:mm");
 };

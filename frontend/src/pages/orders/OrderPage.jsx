@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -39,17 +39,7 @@ const OrderPage = () => {
     dispatch(fetchArrivedAndServingReservations());
   }, [dispatch]);
 
-  // Debug: Log serving reservations when they change
-  useEffect(() => {
-    console.log('Serving reservations updated:', servingReservations);
-    servingReservations.forEach(reservation => {
-      console.log(`Reservation ${reservation._id}:`, {
-        order: reservation.order,
-        orderItems: reservation.order?.orderItems,
-        canComplete: canCompleteOrder(reservation)
-      });
-    });
-  }, [servingReservations]);
+  // Removed debug logging for better performance
 
   useEffect(() => {
     if (error) {
@@ -87,14 +77,14 @@ const OrderPage = () => {
     }
   }, [localError]);
 
-  const formatDate = (dateString) => {
+  const formatDate = useCallback((dateString) => {
     // Trừ đi 7 giờ để hiển thị đúng giờ check-in
     const date = new Date(dateString);
     date.setHours(date.getHours() - 7);
     return date.toLocaleString('en-US');
-  };
+  }, []);
 
-  const handleCreateOrder = async (reservation) => {
+  const handleCreateOrder = useCallback(async (reservation) => {
     if (!user) {
       setLocalError('Please login to create an order');
       return;
@@ -105,9 +95,9 @@ const OrderPage = () => {
       message: 'Do you want to create an order for this reservation?',
       reservation: reservation
     });
-  };
+  }, [user]);
 
-  const confirmCreateOrder = async (reservation) => {
+  const confirmCreateOrder = useCallback(async (reservation) => {
     setCreatingOrderId(reservation._id);
     try {
       const orderData = {
@@ -128,38 +118,28 @@ const OrderPage = () => {
       setCreatingOrderId(null);
       setShowConfirm(null);
     }
-  };
+  }, [dispatch, user._id]);
 
-  const handleGoToMenu = (reservation) => {
+  const handleGoToMenu = useCallback((reservation) => {
     // Lấy orderId từ reservation.order nếu có
     const orderId = reservation.order?._id || reservation.orderId || reservation._id;
     navigate(`/dashboard/menu?orderId=${orderId}&reservationId=${reservation._id}`);
-  };
+  }, [navigate]);
 
   // Check if order can be completed (all order items are Served or Cancelled)
-  const canCompleteOrder = (reservation) => {
-    console.log('Checking canCompleteOrder for reservation:', reservation._id);
-    console.log('Reservation order:', reservation.order);
-    console.log('Order items:', reservation.order?.orderItems);
-    
+  const canCompleteOrder = useCallback((reservation) => {
     if (!reservation.order || !reservation.order.orderItems || reservation.order.orderItems.length === 0) {
-      console.log('Cannot complete: No order or order items');
       return false;
     }
     
     // Order can be completed when all items are either served or cancelled
-    const canComplete = reservation.order.orderItems.every(item => {
-      const isComplete = item.status === 'Served' || item.status === 'Cancelled';
-      console.log(`Item ${item._id} status: ${item.status}, isComplete: ${isComplete}`);
-      return isComplete;
-    });
-    
-    console.log('Can complete order:', canComplete);
-    return canComplete;
-  };
+    return reservation.order.orderItems.every(item => 
+      item.status === 'Served' || item.status === 'Cancelled'
+    );
+  }, []);
 
   // Handle close order (change status to Completed)
-  const handleCloseOrder = async (reservation) => {
+  const handleCloseOrder = useCallback(async (reservation) => {
     if (!reservation.order?._id) {
       setLocalError('No order found for this reservation');
       return;
@@ -175,7 +155,7 @@ const OrderPage = () => {
       message: 'Are you sure you want to close this order? Order will be moved to Completed status.',
       reservation: reservation
     });
-  };
+  }, [canCompleteOrder]);
 
   const confirmCloseOrder = async (reservation) => {
     setClosingOrderId(reservation._id);
@@ -198,7 +178,7 @@ const OrderPage = () => {
   };
 
   // Handle create payment and navigate to payment page
-  const handleCreatePayment = async (reservation) => {
+  const handleCreatePayment = useCallback(async (reservation) => {
     if (!reservation.order?._id) {
       setLocalError('No order found for this reservation');
       return;
@@ -214,7 +194,7 @@ const OrderPage = () => {
       message: 'Do you want to create a payment for this order?',
       reservation: reservation
     });
-  };
+  }, []);
 
   const confirmCreatePayment = async (reservation) => {
     setCreatingPaymentId(reservation._id);
