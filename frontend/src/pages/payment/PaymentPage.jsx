@@ -135,6 +135,16 @@ const PaymentPage = () => {
     return new Date(dateString).toLocaleString('vi-VN');
   };
 
+  // Format ISO string without timezone conversion (e.g., 2025-08-19T19:00:00.000Z -> 19/08/2025 • 19:00)
+  const formatIsoRawDateTime = (isoString) => {
+    if (!isoString || typeof isoString !== 'string') return 'N/A';
+    const [datePart, timePartWithZ] = isoString.split('T');
+    if (!datePart || !timePartWithZ) return 'N/A';
+    const [year, month, day] = datePart.split('-');
+    const timePart = timePartWithZ.replace('Z', '').slice(0, 5);
+    return `${day}/${month}/${year} • ${timePart}`;
+  };
+
   const calculateTotal = () => {
     if (payment) {
       // Use payment data if available
@@ -379,7 +389,7 @@ const PaymentPage = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Check-in:</span>
-                    <span className="ml-2 font-medium">{formatDate(reservationInfo?.checkInTime)}</span>
+                    <span className="ml-2 font-medium">{formatIsoRawDateTime(reservationInfo?.checkInTime)}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Completed Time:</span>
@@ -427,7 +437,7 @@ const PaymentPage = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Check-in:</span>
-                    <span className="ml-2 font-medium">{formatDate(reservationInfo?.checkInTime)}</span>
+                    <span className="ml-2 font-medium">{formatIsoRawDateTime(reservationInfo?.checkInTime)}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Table:</span>
