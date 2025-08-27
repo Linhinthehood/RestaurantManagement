@@ -545,22 +545,25 @@ const MenuManagementTab = () => {
 
       {/* Food Modal */}
       {showFoodModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">
-                  {editingFood ? 'Edit Food Item' : 'Add New Food Item'}
-                </h3>
-                <button onClick={closeFoodModal} className="text-gray-400 hover:text-gray-600">
-                  <X className="w-5 h-5" />
-                </button>
+        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          {/* Glass morphism modal */}
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-100 border border-white/20 animate-in zoom-in-95 duration-300">
+            {/* Header with icon */}
+            <div className="p-8 pb-6 border-b border-gray-200/50">
+              <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full shadow-lg animate-in zoom-in-95 duration-500 delay-200 bg-gradient-to-br from-blue-100 to-blue-200">
+                {editingFood ? <Edit className="w-10 h-10 text-blue-600" /> : <Plus className="w-10 h-10 text-blue-600" />}
               </div>
+              <h3 className="text-2xl font-bold text-center text-gray-900 mb-3 animate-in slide-in-from-top-4 duration-500 delay-300">
+                {editingFood ? 'Edit Food Item' : 'Add New Food Item'}
+              </h3>
+              <p className="text-gray-600 text-center leading-relaxed text-lg animate-in slide-in-from-top-4 duration-500 delay-400">
+                {editingFood ? 'Update the food item information below' : 'Fill in the details to create a new food item'}
+              </p>
             </div>
             
-            <form onSubmit={handleFoodSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleFoodSubmit} className="p-8 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Food Name *
                 </label>
                 <input
@@ -568,26 +571,26 @@ const MenuManagementTab = () => {
                   required
                   value={foodForm.name}
                   onChange={(e) => setFoodForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/80 backdrop-blur-sm transition-all duration-200"
                   placeholder="Enter food name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Description
                 </label>
                 <textarea
                   value={foodForm.description}
                   onChange={(e) => setFoodForm(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/80 backdrop-blur-sm transition-all duration-200"
                   placeholder="Enter food description"
                   rows="3"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Price (VND) *
                 </label>
                 <input
@@ -597,20 +600,20 @@ const MenuManagementTab = () => {
                   step="1000"
                   value={foodForm.pricePerUnit}
                   onChange={(e) => setFoodForm(prev => ({ ...prev, pricePerUnit: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/80 backdrop-blur-sm transition-all duration-200"
                   placeholder="Enter price"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category *
                 </label>
                 <select
                   required
                   value={foodForm.categoryId}
                   onChange={(e) => setFoodForm(prev => ({ ...prev, categoryId: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/80 backdrop-blur-sm transition-all duration-200"
                 >
                   <option value="">Select a category</option>
                   {allCategories.map(category => (
@@ -621,9 +624,9 @@ const MenuManagementTab = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Quantity *
                   </label>
                   <input
@@ -632,20 +635,20 @@ const MenuManagementTab = () => {
                     min="0"
                     value={foodForm.quantity}
                     onChange={(e) => setFoodForm(prev => ({ ...prev, quantity: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/80 backdrop-blur-sm transition-all duration-200"
                     placeholder="Stock quantity"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Status *
                   </label>
                   <select
                     required
                     value={foodForm.status}
                     onChange={(e) => setFoodForm(prev => ({ ...prev, status: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/80 backdrop-blur-sm transition-all duration-200"
                   >
                     <option value="Available">Available</option>
                     <option value="Unavailable">Unavailable</option>
@@ -654,39 +657,39 @@ const MenuManagementTab = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Food Image
                 </label>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleFoodImageChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 bg-white/80 backdrop-blur-sm transition-all duration-200"
                   />
                   {foodForm.imagePreview && (
-                    <div className="mt-2">
+                    <div className="mt-3">
                       <img 
                         src={foodForm.imagePreview} 
                         alt="Preview" 
-                        className="w-full h-32 object-cover rounded-lg"
+                        className="w-full h-32 object-cover rounded-2xl shadow-lg"
                       />
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-4 pt-6 animate-in slide-in-from-bottom-4 duration-500 delay-500">
                 <button
                   type="button"
                   onClick={closeFoodModal}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="flex-1 px-6 py-4 text-gray-700 bg-gray-100/80 backdrop-blur-sm rounded-2xl hover:bg-gray-200/80 transition-all duration-200 font-semibold text-lg border border-gray-200/50 hover:shadow-lg transform hover:scale-105"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   {editingFood ? 'Update Food' : 'Create Food'}
                 </button>
@@ -698,22 +701,25 @@ const MenuManagementTab = () => {
 
       {/* Category Modal */}
       {showCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">
-                  {editingCategory ? 'Edit Category' : 'Add New Category'}
-                </h3>
-                <button onClick={closeCategoryModal} className="text-gray-400 hover:text-gray-600">
-                  <X className="w-5 h-5" />
-                </button>
+        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          {/* Glass morphism modal */}
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100 border border-white/20 animate-in zoom-in-95 duration-300">
+            {/* Header with icon */}
+            <div className="p-8 pb-6 border-b border-gray-200/50">
+              <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full shadow-lg animate-in zoom-in-95 duration-500 delay-200 bg-gradient-to-br from-purple-100 to-purple-200">
+                {editingCategory ? <Edit className="w-10 h-10 text-purple-600" /> : <Tag className="w-10 h-10 text-purple-600" />}
               </div>
+              <h3 className="text-2xl font-bold text-center text-gray-900 mb-3 animate-in slide-in-from-top-4 duration-500 delay-300">
+                {editingCategory ? 'Edit Category' : 'Add New Category'}
+              </h3>
+              <p className="text-gray-600 text-center leading-relaxed text-lg animate-in slide-in-from-top-4 duration-500 delay-400">
+                {editingCategory ? 'Update the category information below' : 'Create a new category to organize your menu'}
+              </p>
             </div>
             
-            <form onSubmit={handleCategorySubmit} className="p-6 space-y-4">
+            <form onSubmit={handleCategorySubmit} className="p-8 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category Name *
                 </label>
                 <input
@@ -721,41 +727,41 @@ const MenuManagementTab = () => {
                   required
                   value={categoryForm.name}
                   onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 bg-white/80 backdrop-blur-sm transition-all duration-200"
                   placeholder="Enter category name"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Priority *
                 </label>
                 <select
                   required
                   value={categoryForm.priority}
                   onChange={(e) => setCategoryForm(prev => ({ ...prev, priority: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 bg-white/80 backdrop-blur-sm transition-all duration-200"
                 >
                   <option value="High">High Priority</option>
                   <option value="Medium">Medium Priority</option>
                   <option value="Low">Low Priority</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-2 text-center">
                   High priority categories appear first in menus
                 </p>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-4 pt-6 animate-in slide-in-from-bottom-4 duration-500 delay-500">
                 <button
                   type="button"
                   onClick={closeCategoryModal}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="flex-1 px-6 py-4 text-gray-700 bg-gray-100/80 backdrop-blur-sm rounded-2xl hover:bg-gray-200/80 transition-all duration-200 font-semibold text-lg border border-gray-200/50 hover:shadow-lg transform hover:scale-105"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  className="flex-1 px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   {editingCategory ? 'Update Category' : 'Create Category'}
                 </button>
