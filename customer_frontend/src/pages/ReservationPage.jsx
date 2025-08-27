@@ -8,14 +8,25 @@ import GhostButton from "../components/GhostButton";
 import TextArea from "../components/TextArea";
 import { createReservation } from "../services/reservationApi";
 import { message } from "antd";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+
+dayjs.extend(utc);
+dayjs.extend(customParseFormat);
 
 const ReservationPage = () => {
+  const now = dayjs();
+  const oneHourFromNow = now.add(1, "hour");
+  const defaultDate = oneHourFromNow.format("YYYY-MM-DD");
+  const defaultTime = oneHourFromNow.startOf("hour").format("HH:mm");
+
   const [form, setForm] = useState({
     customerName: "",
     customerPhone: "",
     customerEmail: "",
-    dateStr: "",
-    timeStr: "",
+    dateStr: defaultDate,
+    timeStr: defaultTime,
     quantity: 2,
     note: "",
   });
@@ -37,8 +48,20 @@ const ReservationPage = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    const checkInTimeLocal = dayjs(`${form.dateStr} ${form.timeStr}`);
+    const oneHourFromNow = dayjs().add(1, "hour").startOf("minute");
+    if (checkInTimeLocal.isBefore(oneHourFromNow)) {
+      message.error(
+        "Please make a reservation at least 1 hour before check-in time."
+      );
+      setIsLoading(false);
+      return;
+    }
     try {
-      const res = await createReservation(form);
+      const res = await createReservation({
+        ...form,
+        checkInTime: checkInTimeLocal.utc().toDate(),
+      });
       message.success(res.message);
       setSubmitted(true);
     } catch (e) {
@@ -116,6 +139,7 @@ const ReservationPage = () => {
                       type="date"
                       value={form.dateStr}
                       onChange={onChange}
+                      min={dayjs().format("YYYY-MM-DD")}
                       required
                     />
                   </div>
@@ -125,8 +149,14 @@ const ReservationPage = () => {
                       id="timeStr"
                       name="timeStr"
                       type="time"
+                      step="3600"
                       value={form.timeStr}
                       onChange={onChange}
+                      min={
+                        form.dateStr === dayjs().format("YYYY-MM-DD")
+                          ? oneHourFromNow.format("HH:mm")
+                          : null
+                      }
                       required
                     />
                   </div>

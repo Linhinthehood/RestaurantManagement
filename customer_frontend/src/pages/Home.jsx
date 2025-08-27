@@ -43,7 +43,7 @@ const Home = () => {
       </section>
 
       {/* Highlights */}
-      <section className="bg-white py-16">
+      {/* <section className="bg-white py-16">
         <Container>
           <div className="mb-10 text-center">
             <h2 className="font-serif text-3xl font-semibold text-gray-900">
@@ -77,7 +77,7 @@ const Home = () => {
             )}
           </div>
         </Container>
-      </section>
+      </section> */}
     </main>
   );
 };

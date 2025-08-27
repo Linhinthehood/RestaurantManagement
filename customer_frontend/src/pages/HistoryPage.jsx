@@ -127,42 +127,53 @@ const HistoryPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {reservations.map((r) => (
-                <article
-                  key={r._id}
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-amber-100 bg-white p-4 shadow-sm"
-                >
-                  <div className="grid gap-1">
-                    <div className="text-sm text-gray-500">
-                      Single code:{" "}
-                      <span className="font-medium text-gray-800">
-                        {r._id}
-                      </span>
+              {reservations.map((r) => {
+                let currentStatus = r.status;
+                let tableNumber = null;
+
+                if (r.tableHistory && r.tableHistory.length > 0) {
+                  currentStatus = "Confirmed";
+                  tableNumber =
+                    r.tableHistory[r.tableHistory.length - 1].tableNumber;
+                }
+
+                return (
+                  <article
+                    key={r._id}
+                    className="flex items-center justify-between gap-4 rounded-2xl border border-amber-100 bg-white p-4 shadow-sm"
+                  >
+                    <div className="grid gap-1">
+                      <div className="text-sm text-gray-500">
+                        Single code:{" "}
+                        <span className="font-medium text-gray-800">
+                          {r._id}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-700">
+                        Date and time:{" "}
+                        <span className="font-medium">
+                          {formatDateTime(r.checkInTime)}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-700">
+                        Number of guests:{" "}
+                        <span className="font-medium">{r.quantity}</span>
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-700">
-                      Date and time:{" "}
-                      <span className="font-medium">
-                        {formatDateTime(r.checkInTime)}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <StatusBadge status={currentStatus} />
+                      {r.status === "Pending" && (
+                        <GhostButton
+                          onClick={() => handleCancel(r._id)}
+                          className="px-3 py-1.5"
+                        >
+                          Cancel order
+                        </GhostButton>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-700">
-                      Number of guests:{" "}
-                      <span className="font-medium">{r.quantity}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <StatusBadge status={r.status} />
-                    {r.status === "Pending" && (
-                      <GhostButton
-                        onClick={() => handleCancel(r._id)}
-                        className="px-3 py-1.5"
-                      >
-                        Cancel order
-                      </GhostButton>
-                    )}
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>

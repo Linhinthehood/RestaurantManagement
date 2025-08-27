@@ -50,7 +50,6 @@ export const reservationService = {
   },
 
   checkInReservation: async (id) => {
-    console.log("ID của reservation:", id);
     const response = await reservationAPI.put(
       `/reservations/${id}/checkin`,
       {}
