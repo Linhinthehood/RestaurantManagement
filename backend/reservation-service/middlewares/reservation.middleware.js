@@ -75,7 +75,7 @@ const reservationMiddleware = {
     }
 
     const openHour = 9; // 9 AM
-    const closeHour = 22; // 10 PM
+    const closeHour = 23; // 11 PM
     const reservationHour = reservationTime.getHours();
 
     if (reservationHour < openHour || reservationHour >= closeHour) {
@@ -93,7 +93,7 @@ const reservationMiddleware = {
 
     if (!phone) {
       return res.status(400).json({
-        message: "Số điện thoại là bắt buộc",
+        message: "Phone is required",
         success: false,
       });
     }
@@ -101,7 +101,7 @@ const reservationMiddleware = {
     const phoneRegex = /^[0-9]{10,11}$/;
     if (!phoneRegex.test(phone)) {
       return res.status(400).json({
-        message: "Số điện thoại không hợp lệ (phải có 10-11 chữ số)",
+        message: "Not a valid phone (need atleast 10-11 numbers)",
         success: false,
       });
     }

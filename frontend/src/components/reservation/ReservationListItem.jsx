@@ -20,7 +20,7 @@ const ReservationListItem = ({ rsv, onReservationChanged }) => {
   const handleUnassign = async (tableId) => {
     try {
       const res = await reservationService.unassignTable(rsv._id, tableId);
-      message.success(res.data.message);
+      message.success(res.message);
       if (onReservationChanged) {
         onReservationChanged();
       }
@@ -39,10 +39,10 @@ const ReservationListItem = ({ rsv, onReservationChanged }) => {
       const lowerBound = new Date(checkInTime.getTime() - 30 * 60 * 1000);
       const upperBound = new Date(checkInTime.getTime() + 30 * 60 * 1000);
       console.log("res", res);
-      if (now < lowerBound || now > upperBound) {
-        message.error(error.message);
-        return;
-      }
+      // if (now < lowerBound || now > upperBound) {
+      //   message.error(error.message);
+      //   return;
+      // }
       message.success(res.message);
       if (onReservationChanged) {
         onReservationChanged();

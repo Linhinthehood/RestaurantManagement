@@ -393,7 +393,7 @@ const reservationService = {
 
     const activeHistory = await tableHistoryModel.findOneAndDelete({
       reservationId,
-      tableStatus: { $in: ["Pending", "Available"] },
+      tableStatus: { $in: ["Pending", "Available", "Occupied"] },
     });
 
     if (!activeHistory) {
@@ -444,16 +444,19 @@ const reservationService = {
     const isAssignReservation = await reservationModel
       .findById(reservationId)
       .populate("tableHistory");
-    console.log(isAssignReservation);
     if (!isAssignReservation) {
       throw new Error("Reservation didn't assigned");
     }
     const now = new Date();
+    const nowVietnamEquivalent = new Date(now.getTime() + 7 * 60 * 60 * 1000);
     const checkInTime = new Date(reservation.checkInTime);
     const lowerBound = new Date(checkInTime.getTime() - 30 * 60 * 1000);
     const upperBound = new Date(checkInTime.getTime() + 30 * 60 * 1000);
 
-    if (now < lowerBound || now > upperBound) {
+    if (
+      nowVietnamEquivalent < lowerBound ||
+      nowVietnamEquivalent > upperBound
+    ) {
       throw new Error(
         "Check-in is only allowed within 30 minutes before or after the reservation time."
       );
