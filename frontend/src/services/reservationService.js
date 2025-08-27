@@ -38,15 +38,58 @@ export const reservationService = {
     const response = await reservationAPI.post("/reservations", data);
     return response.data;
   },
-  getReservations: async () => {
-    const response = await reservationAPI.get("/reservations");
+
+  getAllReservations: async (params) => {
+    const response = await reservationAPI.get("/reservations", {
+      params,
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    });
     return response.data;
   },
+
   checkInReservation: async (id) => {
-    console.log("ID của reservation:", id);
     const response = await reservationAPI.put(
       `/reservations/${id}/checkin`,
       {}
+    );
+    return response.data;
+  },
+
+  getReservationById: async (id) => {
+    const response = await reservationAPI.get(`/reservations/${id}`);
+    return response.data;
+  },
+
+  cancelReservation: async (id) => {
+    const response = await reservationAPI.put(`/reservations/${id}/cancel`, {});
+    return response.data;
+  },
+
+  getAvailableTables: async (date, time) => {
+    const response = await reservationAPI.get("/reservations/available", {
+      params: { date, time },
+    });
+    return response.data;
+  },
+
+  assignTable: async (reservationId, tableId) => {
+    const response = await reservationAPI.put(
+      `/reservations/${reservationId}/assign-table`,
+      {
+        tableId,
+      }
+    );
+    return response.data;
+  },
+
+  unassignTable: async (reservationId, tableId) => {
+    const response = await reservationAPI.put(
+      `/reservations/${reservationId}/unassign-table`,
+      {
+        tableId,
+      }
     );
     return response.data;
   },

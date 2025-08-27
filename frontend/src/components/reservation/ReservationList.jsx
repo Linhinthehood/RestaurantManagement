@@ -10,15 +10,18 @@ import {
   message,
   Modal,
   TimePicker,
+  Form,
 } from "antd";
 import reservationService from "../../services/reservationService";
+import ReservationStatusFilter from "./ReservationStatusFilter";
 
 const ReservationList = ({
   reservations,
   selectedDate,
   selectedTime,
-  refreshTrigger,
   onReservationChanged,
+  filterStatus,
+  setFilterStatus,
 }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -30,6 +33,10 @@ const ReservationList = ({
     reservationDateTime: initialDateTime,
     note: "",
   });
+
+  // const filtered = reservations.filter((r) =>
+  //   filterStatus === "All" ? true : r.status === filterStatus
+  // );
 
   const handleCreateWalkIn = async () => {
     try {
@@ -67,74 +74,90 @@ const ReservationList = ({
       </div>
 
       <div className="space-y-4">
-        {reservations.length > 0 ? (
-          reservations.map((rsv) => (
-            <ReservationListItem
-              key={rsv._id}
-              rsv={rsv}
-              onUnassigned={onReservationChanged}
-            />
-          ))
-        ) : (
-          <p>No reservations for this slot.</p>
-        )}
+        <ReservationStatusFilter
+          currentStatus={filterStatus}
+          onChange={setFilterStatus}
+        />
+        <div className="h-[350px] overflow-y-auto pr-2 custom-scroll">
+          {reservations.length > 0 ? (
+            reservations.map((rsv) => (
+              <ReservationListItem
+                key={rsv._id}
+                rsv={rsv}
+                onReservationChanged={onReservationChanged}
+              />
+            ))
+          ) : (
+            <p>No reservations for this slot.</p>
+          )}
+        </div>
       </div>
       <Modal
-        title="Tạo đơn Walk-in"
+        title="Create Walk-in Reservation"
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={handleCreateWalkIn}
-        okText="Tạo"
-        cancelText="Hủy"
+        okText="Create"
+        cancelText="Cancel"
+        centered
       >
-        <Input
-          placeholder="Tên khách"
-          value={formData.customerName}
-          onChange={(e) =>
-            setFormData({ ...formData, customerName: e.target.value })
-          }
-          className="mb-2"
-        />
-        <InputNumber
-          min={1}
-          value={formData.quantity}
-          onChange={(val) => setFormData({ ...formData, quantity: val })}
-          className="mb-2 w-full"
-          placeholder="Số khách"
-        />
-        <DatePicker
-          // Value nhận vào là đối tượng dayjs
-          value={formData.reservationDateTime}
-          onChange={(date) => {
-            // date ở đây đã là một đối tượng dayjs hợp lệ
-            const newDateTime = date
-              .hour(formData.reservationDateTime.hour())
-              .minute(0)
-              .second(0);
-            setFormData({ ...formData, reservationDateTime: newDateTime });
-          }}
-          className="mb-2 w-full"
-          format="YYYY-MM-DD"
-        />
-        <TimePicker
-          // Value nhận vào là đối tượng dayjs
-          value={formData.reservationDateTime}
-          onChange={(time) => {
-            // time ở đây đã là một đối tượng dayjs hợp lệ
-            const newDateTime = formData.reservationDateTime
-              .hour(time.hour())
-              .minute(0) // Đảm bảo phút luôn là 0
-              .second(0);
-            setFormData({ ...formData, reservationDateTime: newDateTime });
-          }}
-          className="mb-2 w-full"
-          format="HH"
-        />
-        <Input.TextArea
-          placeholder="Ghi chú"
-          value={formData.note}
-          onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-        />
+        <Form layout="vertical">
+          {/* Number of Guests */}
+          <Form.Item label="Number of Guests">
+            <InputNumber
+              min={1}
+              value={formData.quantity}
+              onChange={(val) => setFormData({ ...formData, quantity: val })}
+              className="w-full"
+              placeholder="Enter number of guests"
+            />
+          </Form.Item>
+
+          {/* Date */}
+          <Form.Item label="Reservation Date">
+            <DatePicker
+              value={formData.reservationDateTime}
+              onChange={(date) => {
+                const newDateTime = date
+                  .hour(formData.reservationDateTime.hour())
+                  .minute(0)
+                  .second(0);
+                setFormData({ ...formData, reservationDateTime: newDateTime });
+              }}
+              className="w-full"
+              format="YYYY-MM-DD"
+            />
+          </Form.Item>
+
+          {/* Time */}
+          <Form.Item label="Reservation Time">
+            <TimePicker
+              value={formData.reservationDateTime}
+              onChange={(time) => {
+                const newDateTime = formData.reservationDateTime
+                  .hour(time.hour())
+                  .minute(0)
+                  .second(0);
+                setFormData({ ...formData, reservationDateTime: newDateTime });
+              }}
+              className="w-full"
+              format="HH:mm"
+              minuteStep={60}
+            />
+          </Form.Item>
+
+          {/* Note */}
+          <Form.Item label="Notes (optional)">
+            <Input.TextArea
+              placeholder="Enter notes..."
+              value={formData.note}
+              onChange={(e) =>
+                setFormData({ ...formData, note: e.target.value })
+              }
+              rows={3}
+            />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

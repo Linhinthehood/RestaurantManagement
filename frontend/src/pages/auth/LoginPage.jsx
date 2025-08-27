@@ -10,6 +10,7 @@ import {
 } from "../../store/userSlice";
 import { authService } from "../../services/authService";
 import Alert from "../../components/Alert";
+import { ChefHat } from "lucide-react";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -34,7 +35,7 @@ const LoginPage = () => {
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
-      dispatch(setError("Vui lòng nhập đầy đủ thông tin"));
+      dispatch(setError("Please enter email and password"));
       return;
     }
 
@@ -68,30 +69,16 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
-        {/* Logo và tiêu đề */}
+        {/* Logo and heading */}
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center">
-            <svg
-              className="h-8 w-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
+            <ChefHat className="h-8 w-8 text-white" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">Đăng nhập</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Hệ thống quản lý nhà hàng
-          </p>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">Sign in</h2>
+          <p className="mt-2 text-sm text-gray-600">Restaurant Management System</p>
         </div>
 
-        {/* Form đăng nhập */}
+        {/* Login form */}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             {/* Email field */}
@@ -112,7 +99,7 @@ const LoginPage = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Nhập email của bạn"
+                  placeholder="Enter your email"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <svg
@@ -138,7 +125,7 @@ const LoginPage = () => {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Mật khẩu
+                Password
               </label>
               <div className="relative">
                 <input
@@ -150,7 +137,7 @@ const LoginPage = () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm pr-10"
-                  placeholder="Nhập mật khẩu của bạn"
+                  placeholder="Enter your password"
                 />
                 <button
                   type="button"
@@ -235,10 +222,11 @@ const LoginPage = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Đang đăng nhập...
+                  Signing in...
                 </div>
               ) : (
-                <span className="flex items-center">
+                <span className="flex items-center gap-2">
+                  Sign in
                   <svg
                     className="w-5 h-5 mr-2"
                     fill="none"
@@ -252,7 +240,6 @@ const LoginPage = () => {
                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                     />
                   </svg>
-                  Đăng nhập
                 </span>
               )}
             </button>
@@ -261,7 +248,7 @@ const LoginPage = () => {
           {/* Footer */}
           <div className="text-center">
             <p className="text-xs text-gray-500">
-              Chỉ dành cho nhân viên nhà hàng
+              For restaurant staff only
             </p>
           </div>
         </form>

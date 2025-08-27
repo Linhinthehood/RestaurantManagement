@@ -2,10 +2,10 @@ import React from "react";
 import { useDrag } from "react-dnd";
 import { UserIcon, ClockIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { Button, message } from "antd";
-import axios from "axios";
 import reservationService from "../../services/reservationService";
+import { getStatusColorClass } from "../../utils/statusColor";
 
-const ReservationListItem = ({ rsv, onUnassigned }) => {
+const ReservationListItem = ({ rsv, onReservationChanged }) => {
   const [{ isDragging }, dragRef] = useDrag(() => ({
     type: "reservation",
     item: {
@@ -19,12 +19,11 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
   }));
   const handleUnassign = async (tableId) => {
     try {
-      const res = await axios.put(
-        `http://localhost:3000/api/v1/reservations/${rsv._id}/unassign-table`,
-        { tableId }
-      );
-      message.success(res.data.message);
-      onUnassigned();
+      const res = await reservationService.unassignTable(rsv._id, tableId);
+      message.success(res.message);
+      if (onReservationChanged) {
+        onReservationChanged();
+      }
     } catch (error) {
       message.error(
         error.response?.data?.message || "Failed to unassign table"
@@ -35,13 +34,25 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
   const handleCheckIn = async () => {
     try {
       const res = await reservationService.checkInReservation(rsv._id);
-      console.log("Day la cho toi test: ", res);
+      const now = new Date();
+      const checkInTime = new Date(rsv.checkInTime);
+      const lowerBound = new Date(checkInTime.getTime() - 30 * 60 * 1000);
+      const upperBound = new Date(checkInTime.getTime() + 30 * 60 * 1000);
+      console.log("res", res);
+      // if (now < lowerBound || now > upperBound) {
+      //   message.error(error.message);
+      //   return;
+      // }
       message.success(res.message);
-      onUnassigned();
+      if (onReservationChanged) {
+        onReservationChanged();
+      }
     } catch (err) {
       message.error(err.response?.data?.message || "Failed to check-in");
     }
   };
+  const statusClasses = getStatusColorClass(rsv.status);
+  console.log("Status:", rsv.status, "Classes:", statusClasses);
 
   return (
     <div
@@ -50,7 +61,9 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
         isDragging ? "opacity-90 scale-95" : ""
       }`}
     >
-      <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4 shadow-sm bg-white hover:shadow-md transition">
+      <div
+        className={`flex items-center justify-between border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition ${statusClasses.bg}`}
+      >
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-gray-700 font-medium">
             <UserIcon className="h-5 w-5 text-blue-500" />
@@ -93,7 +106,7 @@ const ReservationListItem = ({ rsv, onUnassigned }) => {
               </Button>
             ))}
           </div>
-          {rsv.status !== "Arrived" && rsv.status !== "Cancelled" && (
+          {rsv.status !== "Arrived" && rsv.status !== "Canceled" && (
             <Button size="small" type="primary" onClick={handleCheckIn}>
               Check-in
             </Button>

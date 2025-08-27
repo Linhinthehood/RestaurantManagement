@@ -286,8 +286,28 @@ const DashboardTab = () => {
     }).format(value);
   };
 
+  // Formatter cho trục Y (không dùng style currency để tránh ký hiệu thừa và làm tròn)
+  const formatAxisCurrency = (value) => {
+    if (typeof value !== 'number') return value;
+    if (Math.abs(value) >= 1000) {
+      const thousands = Math.round(value / 1000);
+      return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(thousands) + 'k';
+    }
+    return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(value);
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US');
+  };
+
+  // Format ISO UTC string without timezone conversion, e.g., 2025-08-19T19:00:00.000Z -> 19/08/2025 • 19:00
+  const formatIsoRawDateTime = (isoString) => {
+    if (!isoString || typeof isoString !== 'string') return 'N/A';
+    const [datePart, timePartWithZ] = isoString.split('T');
+    if (!datePart || !timePartWithZ) return 'N/A';
+    const [year, month, day] = datePart.split('-');
+    const timePart = timePartWithZ.replace('Z', '').slice(0, 5); // HH:mm
+    return `${day}/${month}/${year} • ${timePart}`;
   };
 
   const parseAmount = (amount) => {
@@ -440,8 +460,8 @@ const DashboardTab = () => {
             <BarChart data={dashboardData.monthlyRevenue}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="time" />
-              <YAxis tickFormatter={formatCurrency} />
-              <Tooltip formatter={(value) => [formatCurrency(value), 'Revenue']} />
+              <YAxis tickFormatter={formatAxisCurrency} allowDecimals={false} />
+              <Tooltip formatter={(value) => [formatAxisCurrency(value), 'Revenue']} />
               <Legend />
               <Bar dataKey="revenue" fill="#3B82F6" />
             </BarChart>
@@ -681,6 +701,10 @@ const DashboardTab = () => {
                           <p className="text-gray-600 mt-2">Phone</p>
                           <p className="font-medium">
                             {selectedPayment.reservation?.customerId?.phone || selectedPayment.customer?.phone || 'N/A'}
+                          </p>
+                          <p className="text-gray-600 mt-2">Check-in Time</p>
+                          <p className="font-medium">
+                            {formatIsoRawDateTime(selectedPayment.reservation?.checkInTime)}
                           </p>
                         </div>
                         <div>

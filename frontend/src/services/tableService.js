@@ -27,11 +27,13 @@ tableAPI.interceptors.response.use(
 );
 
 export const tableService = {
+  // Backend mounts at /api/v1/tables
   getTables: async () => (await tableAPI.get('/tables')).data,
   getTableById: async (id) => (await tableAPI.get(`/tables/${id}`)).data,
-  createTable: async (payload) => (await tableAPI.post('/tables', payload)).data,
-  updateTable: async (id, payload) => (await tableAPI.put(`/tables/${id}`, payload)).data,
-  deleteTable: async (id) => (await tableAPI.delete(`/tables/${id}`)).data,
+  // Create/Update/Delete use explicit suffixes per backend routes
+  createTable: async (payload) => (await tableAPI.post('/tables/create', payload)).data,
+  updateTable: async (id, payload) => (await tableAPI.put(`/tables/${id}/update`, payload)).data,
+  deleteTable: async (id) => (await tableAPI.delete(`/tables/${id}/delete`)).data,
 };
 
 export default tableService;

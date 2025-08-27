@@ -43,7 +43,7 @@ const Home = () => {
       </section>
 
       {/* Highlights */}
-      <section className="bg-white py-16">
+      {/* <section className="bg-white py-16">
         <Container>
           <div className="mb-10 text-center">
             <h2 className="font-serif text-3xl font-semibold text-gray-900">
@@ -62,9 +62,7 @@ const Home = () => {
                 >
                   <div className="h-40 w-full bg-gradient-to-tr from-amber-100 via-amber-50 to-white" />
                   <div className="p-5">
-                    <h3 className="font-serif text-lg text-gray-900">
-                      {title}
-                    </h3>
+                    <h3 className="text-lg text-gray-900">{title}</h3>
                     <p className="mt-1 text-sm text-gray-600">
                       Fresh ingredients • Prepared the same day
                     </p>
@@ -79,7 +77,7 @@ const Home = () => {
             )}
           </div>
         </Container>
-      </section>
+      </section> */}
     </main>
   );
 };

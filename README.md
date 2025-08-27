@@ -16,7 +16,7 @@ Restaurant-Management/
 │   ├── order-service/
 │   ├── table-service/
 │   └── payment-service/
-│
+├── customer_frontend/
 ├── frontend/
 │
 ├── docker-compose.yml

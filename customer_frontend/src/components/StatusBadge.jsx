@@ -10,7 +10,7 @@ const StatusBadge = ({ status = "Pending" }) => {
       text: "Confirmed",
       cls: "bg-emerald-100 text-emerald-800 border-emerald-200",
     },
-    Cancelled: {
+    Canceled: {
       text: "Canceled",
       cls: "bg-rose-100 text-rose-800 border-rose-200",
     },

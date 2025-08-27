@@ -9,11 +9,12 @@ export const createReservation = async (data) => {
 };
 
 export const getReservationsByPhone = async (phone) => {
-  const res = await axios.get(`${API_BASE}/customer/?${phone}`);
+  const res = await axios.get(`${API_BASE}/customer/${phone}`);
+  console.log(res.data);
   return res.data;
 };
 
 export const cancelReservation = async (id) => {
-  const res = await axios.patch(`${API_BASE}/${id}/cancel`);
+  const res = await axios.put(`${API_BASE}/${id}/cancel`);
   return res.data;
 };

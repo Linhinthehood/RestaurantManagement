@@ -8,15 +8,12 @@ const route = express.Router();
 
 route.post(
   "/",
-  // protect, // Thêm middleware xác thực token trước
-  // authorize("Manager", "Receptionist", "Waiter"),
   reservationMiddleware.validateReservationInput,
   reservationMiddleware.validateReservationTime,
   reservationController.createReservation
 );
 route.put(
   "/:id/assign-table",
-  // protect,
   validateAssignTable,
   reservationController.assignTable
 );
@@ -39,7 +36,6 @@ route.get(
 );
 route.get(
   "/customer/:phone",
-  // protect,
   reservationMiddleware.validatePhoneNumber,
   reservationController.getReservationByPhone
 );
@@ -48,8 +44,12 @@ route.get(
   protect,
   reservationController.getTablesByReservationId
 );
-route.get("/:id", protect, reservationController.getReservationById);
-route.put("/:id/cancel", protect, reservationController.cancelReservation);
+route.get(
+  "/:id",
+  // protect,
+  reservationController.getReservationById
+);
+route.put("/:id/cancel", reservationController.cancelReservation);
 
 // Route để cập nhật tableStatus khi payment hoàn thành
 route.patch(

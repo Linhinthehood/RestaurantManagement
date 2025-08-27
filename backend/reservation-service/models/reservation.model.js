@@ -23,14 +23,14 @@ const reservationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Pending", "Arrived", "Cancelled"],
+      enum: ["Pending", "Arrived", "Canceled"],
       default: "Pending",
     },
     statusHistory: [
       {
         status: {
           type: String,
-          enum: ["Pending", "Arrived", "Cancelled"],
+          enum: ["Pending", "Arrived", "Canceled"],
         },
         changedAt: {
           type: Date,
